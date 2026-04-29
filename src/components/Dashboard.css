@@ -650,6 +650,90 @@
   margin: 0;
 }
 
+/* Reminder toggle */
+
+.calc__reminder {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.calc__reminder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc__reminder-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.calc__reminder-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 50px;
+  background: #d1d5db;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.calc__reminder-toggle--on {
+  background: #1a73e8;
+}
+
+.calc__reminder-toggle-dot {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+}
+
+.calc__reminder-toggle--on .calc__reminder-toggle-dot {
+  transform: translateX(20px);
+}
+
+.calc__reminder-sub {
+  font-size: 12px;
+  color: #6b7280;
+  display: block;
+  margin: 10px 0 8px;
+}
+
+.calc__reminder-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.calc__reminder-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.calc__reminder-btn--active {
+  border-color: #1a73e8;
+  background: #eff6ff;
+  color: #1a73e8;
+}
+
 /* Footer */
 
 .calc__footer {

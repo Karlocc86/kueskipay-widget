@@ -154,31 +154,31 @@ function getRecomendacion(quincenas, score, monto) {
 
   if (score >= 750) {
     return {
-      2: `💪 Con tu score excelente puedes pagar en 2 quincenas. Ahorras $${(monto * 0.03 * 2).toFixed(0)} en intereses.`,
-      4: `✅ Opción equilibrada. Tu score te permite acceder a mejores tasas en el futuro.`,
-      6: `📊 Cuotas de $${cuota.toFixed(0)} MXN. Con tu historial podrías solicitar un aumento de línea.`,
-      8: `⚠️ Aunque puedes pagarlo, con tu score es mejor en menos quincenas para ahorrar intereses.`,
+      2: `Con tu score excelente puedes pagar en 2 quincenas. Ahorras $${(monto * 0.03 * 2).toFixed(0)} en intereses.`,
+      4: `Opción equilibrada. Tu score te permite acceder a mejores tasas en el futuro.`,
+      6: `Cuotas de $${cuota.toFixed(0)} MXN. Con tu historial podrías solicitar un aumento de línea.`,
+      8: `Aunque puedes pagarlo, con tu score es mejor en menos quincenas para ahorrar intereses.`,
     }[quincenas]
   } else if (score >= 650) {
     return {
-      2: `⚡ Cuotas altas de $${cuota.toFixed(0)} MXN. Asegúrate de tener liquidez suficiente.`,
-      4: `✅ Mejor opción para tu score actual. Pagar a tiempo mejorará tu historial.`,
-      6: `📅 Cuotas cómodas de $${cuota.toFixed(0)} MXN. Cada pago puntual suma puntos a tu score.`,
-      8: `🔒 Bloqueado — mejora tu score a 750+ para acceder a 8 quincenas.`,
+      2: `Cuotas altas de $${cuota.toFixed(0)} MXN. Asegúrate de tener liquidez suficiente.`,
+      4: `Mejor opción para tu score actual. Pagar a tiempo mejorará tu historial.`,
+      6: `Cuotas cómodas de $${cuota.toFixed(0)} MXN. Cada pago puntual suma puntos a tu score.`,
+      8: `Bloqueado — mejora tu score a 750+ para acceder a 8 quincenas.`,
     }[quincenas]
   } else if (score >= 550) {
     return {
-      2: `⚠️ Cuotas elevadas. Solo elige 2 quincenas si tienes el dinero asegurado.`,
-      4: `📈 Recomendado para tu score. Pagar puntual puede subir tu score hasta 30 puntos.`,
-      6: `💡 Cuotas de $${cuota.toFixed(0)} MXN. No uses más del 60% de tu crédito disponible.`,
-      8: `🔒 Bloqueado — necesitas score 750+ para 8 quincenas.`,
+      2: `Cuotas elevadas. Solo elige 2 quincenas si tienes el dinero asegurado.`,
+      4: `Recomendado para tu score. Pagar puntual puede subir tu score hasta 30 puntos.`,
+      6: `Cuotas de $${cuota.toFixed(0)} MXN. No uses más del 60% de tu crédito disponible.`,
+      8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
     }[quincenas]
   } else {
     return {
-      2: `🚨 Tu score es bajo. Pagar estas 2 quincenas a tiempo puede recuperar hasta 50 puntos.`,
-      4: `📋 Opción más segura con tu score actual. Activa recordatorios de pago.`,
-      6: `⛔ No recomendado — con score bajo, más quincenas aumentan el riesgo de mora.`,
-      8: `🔒 Bloqueado — necesitas score 750+ para 8 quincenas.`,
+      2: `Tu score es bajo. Pagar estas 2 quincenas a tiempo puede recuperar hasta 50 puntos.`,
+      4: `Opción más segura con tu score actual. Activa recordatorios de pago.`,
+      6: `No recomendado — con score bajo, más quincenas aumentan el riesgo de mora.`,
+      8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
     }[quincenas]
   }
 }
@@ -193,6 +193,8 @@ function TabCalculadora({ usuario }) {
   const [monto, setMonto] = useState(513)
   const [rawInput, setRawInput] = useState('513')
   const [quincenas, setQuincenas] = useState(4)
+  const [recordatorio, setRecordatorio] = useState(false)
+  const [anticipacion, setAnticipacion] = useState('1 día')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.tabs) return
@@ -259,6 +261,33 @@ function TabCalculadora({ usuario }) {
           </div>
         </div>
         {monto > 0 && <div className="calc__rec">{getRecomendacion(quincenas, score, monto)}</div>}
+        <div className="calc__reminder">
+          <div className="calc__reminder-header">
+            <span className="calc__reminder-label">🔔 Recordatorio de pago</span>
+            <button
+              className={`calc__reminder-toggle ${recordatorio ? 'calc__reminder-toggle--on' : ''}`}
+              onClick={() => setRecordatorio(v => !v)}
+            >
+              <div className="calc__reminder-toggle-dot" />
+            </button>
+          </div>
+          {recordatorio && (
+            <div className="calc__reminder-opciones">
+              <span className="calc__reminder-sub">¿Con cuánto tiempo de anticipación?</span>
+              <div className="calc__reminder-btns">
+                {['1 día', '3 días', '1 semana'].map(op => (
+                  <button
+                    key={op}
+                    className={`calc__reminder-btn ${anticipacion === op ? 'calc__reminder-btn--active' : ''}`}
+                    onClick={() => setAnticipacion(op)}
+                  >
+                    {op}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="calc__desglose">
           <div className="calc__row"><span>Monto original</span><span>${fmt(monto)}</span></div>
           <hr className="calc__divider" />
