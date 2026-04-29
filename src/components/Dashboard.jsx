@@ -235,16 +235,43 @@ function TabCalculadora({ usuario }) {
 // ─── Tab: Buscar ─────────────────────────────────────────────────────────────
 function TabBuscar({ tiendas }) {
   const [busqueda, setBusqueda] = useState('')
+  const [resultados, setResultados] = useState([])
+  const [buscando, setBuscando] = useState(false)
 
-  const tiendasFiltradas = busqueda
-    ? tiendas.filter(t => t.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-    : tiendas
+  useEffect(() => {
+    if (!busqueda.trim()) {
+      setResultados([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      setBuscando(true)
+      const { data } = await supabase
+        .from('productos')
+        .select('*, tiendas_afiliadas(nombre, logo, url)')
+        .ilike('nombre', `%${busqueda}%`)
+      setResultados(data ?? [])
+      setBuscando(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [busqueda])
 
-  const getIniciales = (nombre) => {
+  const productosAgrupados = useMemo(() => {
+    const grupos = {}
+    resultados.forEach(p => {
+      if (!grupos[p.nombre]) grupos[p.nombre] = []
+      grupos[p.nombre].push(p)
+    })
+    Object.values(grupos).forEach(arr => arr.sort((a, b) => a.precio - b.precio))
+    return grupos
+  }, [resultados])
+
+  const getIniciales = (nombre = '') => {
     const palabras = nombre.trim().split(' ')
     if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase()
     return (palabras[0][0] + palabras[1][0]).toUpperCase()
   }
+
+  const hayBusqueda = busqueda.trim().length > 0
 
   return (
     <div className="buscar">
@@ -259,42 +286,92 @@ function TabBuscar({ tiendas }) {
         />
       </div>
 
-      {!busqueda && (
-        <h3 className="buscar__seccion-titulo">Tiendas afiliadas</h3>
-      )}
-
-      {tiendasFiltradas.length > 0 ? (
-        <div className="buscar__tiendas-grid">
-          {tiendasFiltradas.map((tienda) => (
-            <div key={tienda.id_tienda} className="tienda-card">
-              <div className="tienda-card__logo-wrapper">
-                <img
-                  src={tienda.logo}
-                  alt={tienda.nombre}
-                  className="tienda-card__logo"
-                  onError={(e) => {
-                    e.target.style.display = 'none'
-                    e.target.nextSibling.style.display = 'flex'
-                  }}
-                />
-                <div className="tienda-card__iniciales" style={{ display: 'none' }}>
-                  {getIniciales(tienda.nombre)}
+      {!hayBusqueda ? (
+        <>
+          <h3 className="buscar__seccion-titulo">Tiendas afiliadas</h3>
+          <div className="buscar__tiendas-grid">
+            {tiendas.map((tienda) => (
+              <div key={tienda.id_tienda} className="tienda-card">
+                <div className="tienda-card__logo-wrapper">
+                  <img
+                    src={tienda.logo}
+                    alt={tienda.nombre}
+                    className="tienda-card__logo"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                      e.target.nextSibling.style.display = 'flex'
+                    }}
+                  />
+                  <div className="tienda-card__iniciales" style={{ display: 'none' }}>
+                    {getIniciales(tienda.nombre)}
+                  </div>
                 </div>
+                <span className="tienda-card__nombre">{tienda.nombre}</span>
+                <a href={`https://${tienda.url}`} target="_blank" rel="noreferrer" className="tienda-card__link">
+                  Ver tienda →
+                </a>
               </div>
-              <span className="tienda-card__nombre">{tienda.nombre}</span>
-              <a
-                href={`https://${tienda.url}`}
-                target="_blank"
-                rel="noreferrer"
-                className="tienda-card__link"
-              >
-                Ver tienda →
-              </a>
+            ))}
+          </div>
+        </>
+      ) : buscando ? (
+        <p className="buscar__loading">Buscando...</p>
+      ) : Object.keys(productosAgrupados).length > 0 ? (
+        <div className="buscar__resultados">
+          {Object.entries(productosAgrupados).map(([nombre, filas]) => (
+            <div key={nombre} className="comparador-card">
+              <span className="comparador-card__titulo">{nombre}</span>
+              <div className="comparador-card__lista">
+                {filas.map((producto, i) => {
+                  const esMejor = i === 0
+                  const tienda = producto.tiendas_afiliadas
+                  return (
+                    <div
+                      key={producto.id_producto}
+                      className={`comparador-fila ${esMejor ? 'comparador-fila--mejor' : ''}`}
+                      onClick={() => {
+                        const url = producto.url_producto || (tienda?.url ? `https://${tienda.url}` : null)
+                        if (url) window.open(url, '_blank')
+                      }}
+                    >
+                      <div className="comparador-fila__left">
+                        <div className="comparador-fila__logo-wrap">
+                          <img
+                            src={tienda?.logo}
+                            alt={tienda?.nombre}
+                            className="comparador-fila__logo"
+                            onError={(e) => {
+                              e.target.style.display = 'none'
+                              e.target.nextSibling.style.display = 'flex'
+                            }}
+                          />
+                          <div className="comparador-fila__iniciales" style={{ display: 'none' }}>
+                            {getIniciales(tienda?.nombre)}
+                          </div>
+                        </div>
+                        <div className="comparador-fila__info">
+                          <span className="comparador-fila__nombre">{tienda?.nombre ?? 'Tienda'}</span>
+                          {esMejor && <span className="comparador-fila__badge">Mejor precio ✅</span>}
+                        </div>
+                      </div>
+                      <div className="comparador-fila__right">
+                        <span className="comparador-fila__precio">
+                          ${(producto.precio ?? 0).toLocaleString('es-MX')}
+                        </span>
+                        <span className="comparador-fila__arrow">→</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="buscar__empty">No se encontraron tiendas</p>
+        <div className="buscar__empty-wrap">
+          <span className="buscar__empty-icon">🔍</span>
+          <p className="buscar__empty">No se encontraron productos para tu búsqueda</p>
+        </div>
       )}
     </div>
   )

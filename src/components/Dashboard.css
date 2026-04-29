@@ -765,11 +765,135 @@
   text-decoration: underline;
 }
 
+.buscar__empty-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
+}
+
+.buscar__empty-icon {
+  font-size: 32px;
+}
+
 .buscar__empty {
   text-align: center;
   color: #9ca3af;
   font-size: 13px;
+  margin: 0;
+}
+
+.buscar__loading {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
   margin-top: 24px;
+}
+
+.buscar__resultados {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── Comparador de precios ──────────────────────────────────────────────── */
+
+.comparador-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comparador-card__titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.comparador-card__lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.comparador-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 8px;
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+}
+
+.comparador-fila:first-child {
+  border-top: none;
+}
+
+.comparador-fila--mejor {
+  background: #F0FDF4;
+}
+
+.comparador-fila__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comparador-fila__logo-wrap {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.comparador-fila__logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  object-fit: contain;
+}
+
+.comparador-fila__iniciales {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+}
+
+.comparador-fila__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.comparador-fila__nombre {
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.comparador-fila__badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #00C46A;
+}
+
+.comparador-fila__precio {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A73E8;
+  flex-shrink: 0;
 }
 
 /* ─── Settings Dropdown ──────────────────────────────────────────────────── */
