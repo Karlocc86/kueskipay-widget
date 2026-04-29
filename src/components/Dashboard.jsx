@@ -87,7 +87,7 @@ function CreditCard({ usuario, isCompatible }) {
 }
 
 // ─── Tab: Inicio ─────────────────────────────────────────────────────────────
-function TabInicio({ usuario, isCompatible }) {
+function TabInicio({ usuario, isCompatible, onVerTiendas }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const lineaTotal = disponible + adeudo
@@ -116,11 +116,11 @@ function TabInicio({ usuario, isCompatible }) {
         <>
           <div className="inicio__actions">
             {[
-              { Icon: IconMoney, label: 'Obtener dinero' },
-              { Icon: IconCalendar, label: 'Abonar quincena' },
-              { Icon: IconStore, label: 'Tiendas afiliadas' },
-            ].map(({ Icon, label }) => (
-              <button key={label} className="action-btn"><Icon /><span>{label}</span></button>
+              { Icon: IconMoney, label: 'Obtener dinero', onClick: undefined },
+              { Icon: IconCalendar, label: 'Abonar quincena', onClick: undefined },
+              { Icon: IconStore, label: 'Tiendas afiliadas', onClick: onVerTiendas },
+            ].map(({ Icon, label, onClick }) => (
+              <button key={label} className="action-btn" onClick={onClick}><Icon /><span>{label}</span></button>
             ))}
           </div>
           {adeudo > 0 && (
@@ -141,7 +141,7 @@ function TabInicio({ usuario, isCompatible }) {
           </svg>
           <p className="inicio__incompatible-title">Crédito no disponible aquí</p>
           <p className="inicio__incompatible-sub">Navega a una tienda afiliada para realizar tus compras con KueskiPay.</p>
-          <button className="inicio__incompatible-btn">Ver tiendas afiliadas</button>
+          <button className="inicio__incompatible-btn" onClick={onVerTiendas}>Ver tiendas afiliadas</button>
         </div>
       )}
     </div>
@@ -164,6 +164,23 @@ function TabCalculadora({ usuario }) {
   const [monto, setMonto] = useState(513)
   const [rawInput, setRawInput] = useState('513')
   const [quincenas, setQuincenas] = useState(4)
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]?.url) return
+      try {
+        const hostname = new URL(tabs[0].url).hostname
+        if (hostname.includes('mercadolibre.com.mx')) {
+          setMonto(299)
+          setRawInput('299')
+        } else if (hostname.includes('amazon.com.mx')) {
+          setMonto(513)
+          setRawInput('513')
+        }
+      } catch {}
+    })
+  }, [])
 
   const total = monto * (1 + RATE * quincenas)
   const intereses = total - monto
@@ -239,6 +256,11 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
   const [busqueda, setBusqueda] = useState(busquedaInicial)
   const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
+  const topRef = useRef(null)
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'instant' })
+  }, [])
 
   useEffect(() => {
     if (busquedaInicial) setBusqueda(busquedaInicial)
@@ -281,6 +303,7 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
 
   return (
     <div className="buscar">
+      <div ref={topRef} />
       <div className="buscar__input-wrapper">
         <span className="buscar__icon"><IconSearch /></span>
         <input
@@ -465,6 +488,20 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
               const tienda = tiendas.find(t => t.id_tienda === compra.id_tienda)
               return (
                 <div key={compra.id ?? i} className="historial__compra">
+                  <div className="historial__compra-logo">
+                    <img
+                      src={tienda?.logo}
+                      alt=""
+                      className="historial__compra-logo-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                        e.target.nextSibling.style.display = 'flex'
+                      }}
+                    />
+                    <div className="historial__compra-logo-iniciales" style={{ display: 'none' }}>
+                      {tienda?.nombre?.slice(0, 2).toUpperCase()}
+                    </div>
+                  </div>
                   <div className="historial__compra-info">
                     <span className="historial__compra-tienda">{tienda?.nombre ?? 'Tienda Afiliada'}</span>
                     <span className="historial__compra-meta">
@@ -571,7 +608,7 @@ function Dashboard({ usuario, onLogout }) {
       try {
         const hostname = new URL(tabs[0].url).hostname
 
-        if (hostname.includes('amazon.com.mx')) {
+        if (hostname.includes('amazon.com.mx') || hostname.includes('mercadolibre.com.mx')) {
           setTiendaCompatible(true)
           return
         }
@@ -654,7 +691,7 @@ function Dashboard({ usuario, onLogout }) {
       </header>
 
       <main className="dashboard__content">
-        {tab === 'inicio' && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} />}
+        {tab === 'inicio' && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar' && <TabBuscar tiendas={tiendas} />}
         {tab === 'historial' && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}

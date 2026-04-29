@@ -921,15 +921,17 @@
 .comparador-fila__logo-wrap {
   width: 40px;
   height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
   flex-shrink: 0;
+  background: #f9fafb;
 }
 
 .comparador-fila__logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .comparador-fila__iniciales {
@@ -1323,8 +1325,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.historial__compra-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f9fafb;
+}
+
+.historial__compra-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.historial__compra-logo-iniciales {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  align-items: center;
+  justify-content: center;
 }
 
 .historial__compra:first-child {
@@ -1340,6 +1367,8 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex: 1;
+  min-width: 0;
 }
 
 .historial__compra-tienda {
