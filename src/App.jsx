@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import Login from './components/Login'
+import Dashboard from './components/Dashboard'
 
 function App() {
   const [screen, setScreen] = useState('login')
@@ -11,9 +12,7 @@ function App() {
         <Login onLogin={() => setScreen('dashboard')} />
       )}
       {screen === 'dashboard' && (
-        <div style={{ padding: 24, textAlign: 'center' }}>
-          <p>Dashboard — próxima pantalla</p>
-        </div>
+        <Dashboard onLogout={() => setScreen('login')} />
       )}
     </div>
   )
