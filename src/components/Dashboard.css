@@ -368,6 +368,68 @@
   background: #eff6ff;
 }
 
+/* ─── Producto Detectado ─────────────────────────────────────────────────── */
+
+.inicio__producto-detectado {
+  margin: 0 12px 10px;
+  padding: 12px 14px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inicio__producto-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inicio__producto-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a73e8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.inicio__producto-nombre {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inicio__producto-precio {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.inicio__producto-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 14px;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.inicio__producto-btn:hover {
+  background: #1558b0;
+}
+
 /* ─── Tab: Calculadora ───────────────────────────────────────────────────── */
 
 .calc {
@@ -586,6 +648,90 @@
   border: none;
   border-top: 1px solid #e5e7eb;
   margin: 0;
+}
+
+/* Reminder toggle */
+
+.calc__reminder {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.calc__reminder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calc__reminder-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.calc__reminder-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 50px;
+  background: #d1d5db;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.calc__reminder-toggle--on {
+  background: #1a73e8;
+}
+
+.calc__reminder-toggle-dot {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+}
+
+.calc__reminder-toggle--on .calc__reminder-toggle-dot {
+  transform: translateX(20px);
+}
+
+.calc__reminder-sub {
+  font-size: 12px;
+  color: #6b7280;
+  display: block;
+  margin: 10px 0 8px;
+}
+
+.calc__reminder-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.calc__reminder-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.calc__reminder-btn--active {
+  border-color: #1a73e8;
+  background: #eff6ff;
+  color: #1a73e8;
 }
 
 /* Footer */
@@ -828,14 +974,26 @@
   border-radius: 8px;
   border-top: 1px solid #f3f4f6;
   background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .comparador-fila:first-child {
   border-top: none;
 }
 
+.comparador-fila:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: #EFF6FF;
+}
+
 .comparador-fila--mejor {
   background: #F0FDF4;
+}
+
+.comparador-fila--mejor:hover {
+  background: #DCFCE7;
 }
 
 .comparador-fila__left {
@@ -847,15 +1005,17 @@
 .comparador-fila__logo-wrap {
   width: 40px;
   height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
   flex-shrink: 0;
+  background: #f9fafb;
 }
 
 .comparador-fila__logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #e5e7eb;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .comparador-fila__iniciales {
@@ -889,11 +1049,130 @@
   color: #00C46A;
 }
 
+.comparador-fila__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .comparador-fila__precio {
   font-size: 14px;
   font-weight: 700;
   color: #1A73E8;
-  flex-shrink: 0;
+}
+
+.comparador-fila__arrow {
+  font-size: 14px;
+  color: #9ca3af;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.comparador-fila:hover .comparador-fila__arrow {
+  transform: translateX(3px);
+  color: #1a73e8;
+}
+
+/* ─── Bell badge ─────────────────────────────────────────────────────────── */
+
+.bell-wrapper {
+  position: relative;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ─── Notifications Dropdown ─────────────────────────────────────────────── */
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-item {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-item__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-item__label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a73e8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.notif-item__nombre {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item__precio {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.notif-item__btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 14px;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.notif-item__btn:hover {
+  background: #1558b0;
+}
+
+.notif-empty {
+  padding: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
 }
 
 /* ─── Settings Dropdown ──────────────────────────────────────────────────── */
@@ -1130,8 +1409,33 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid #f3f4f6;
+}
+
+.historial__compra-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f9fafb;
+}
+
+.historial__compra-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.historial__compra-logo-iniciales {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  align-items: center;
+  justify-content: center;
 }
 
 .historial__compra:first-child {
@@ -1147,6 +1451,8 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex: 1;
+  min-width: 0;
 }
 
 .historial__compra-tienda {

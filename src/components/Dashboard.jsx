@@ -87,7 +87,7 @@ function CreditCard({ usuario, isCompatible }) {
 }
 
 // ─── Tab: Inicio ─────────────────────────────────────────────────────────────
-function TabInicio({ isCompatible, usuario }) {
+function TabInicio({ usuario, isCompatible, onVerTiendas }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const lineaTotal = disponible + adeudo
@@ -96,8 +96,10 @@ function TabInicio({ isCompatible, usuario }) {
   return (
     <div className="inicio">
       <div className={`badge ${isCompatible ? 'badge--green' : 'badge--red'}`}>
-        <span className="badge__icon">{isCompatible ? '✓' : '✗'}</span>
-        {isCompatible ? 'Este comercio es compatible con Kueski' : 'Este comercio no es compatible con Kueski'}
+        <span className="badge__icon">{isCompatible ? '✅' : '❌'}</span>
+        {isCompatible
+          ? 'Este comercio es compatible con Kueski'
+          : 'Este comercio no es compatible con Kueski'}
       </div>
       <CreditCard usuario={usuario} isCompatible={isCompatible} />
       <div className="inicio__credit-row">
@@ -114,11 +116,11 @@ function TabInicio({ isCompatible, usuario }) {
         <>
           <div className="inicio__actions">
             {[
-              { Icon: IconMoney, label: 'Obtener dinero' },
-              { Icon: IconCalendar, label: 'Abonar quincena' },
-              { Icon: IconStore, label: 'Tiendas afiliadas' },
-            ].map(({ Icon, label }) => (
-              <button key={label} className="action-btn"><Icon /><span>{label}</span></button>
+              { Icon: IconMoney, label: 'Obtener dinero', onClick: undefined },
+              { Icon: IconCalendar, label: 'Abonar quincena', onClick: undefined },
+              { Icon: IconStore, label: 'Tiendas afiliadas', onClick: onVerTiendas },
+            ].map(({ Icon, label, onClick }) => (
+              <button key={label} className="action-btn" onClick={onClick}><Icon /><span>{label}</span></button>
             ))}
           </div>
           {adeudo > 0 && (
@@ -139,7 +141,7 @@ function TabInicio({ isCompatible, usuario }) {
           </svg>
           <p className="inicio__incompatible-title">Crédito no disponible aquí</p>
           <p className="inicio__incompatible-sub">Navega a una tienda afiliada para realizar tus compras con KueskiPay.</p>
-          <button className="inicio__incompatible-btn">Ver tiendas afiliadas</button>
+          <button className="inicio__incompatible-btn" onClick={onVerTiendas}>Ver tiendas afiliadas</button>
         </div>
       )}
     </div>
@@ -147,21 +149,69 @@ function TabInicio({ isCompatible, usuario }) {
 }
 
 // ─── Tab: Calculadora ─────────────────────────────────────────────────────────
+function getRecomendacion(quincenas, score, monto) {
+  const cuota = (monto * (1 + 0.03 * quincenas)) / quincenas
+
+  if (score >= 750) {
+    return {
+      2: `Con tu score excelente puedes pagar en 2 quincenas. Ahorras $${(monto * 0.03 * 2).toFixed(0)} en intereses.`,
+      4: `Opción equilibrada. Tu score te permite acceder a mejores tasas en el futuro.`,
+      6: `Cuotas de $${cuota.toFixed(0)} MXN. Con tu historial podrías solicitar un aumento de línea.`,
+      8: `Aunque puedes pagarlo, con tu score es mejor en menos quincenas para ahorrar intereses.`,
+    }[quincenas]
+  } else if (score >= 650) {
+    return {
+      2: `Cuotas altas de $${cuota.toFixed(0)} MXN. Asegúrate de tener liquidez suficiente.`,
+      4: `Mejor opción para tu score actual. Pagar a tiempo mejorará tu historial.`,
+      6: `Cuotas cómodas de $${cuota.toFixed(0)} MXN. Cada pago puntual suma puntos a tu score.`,
+      8: `Bloqueado — mejora tu score a 750+ para acceder a 8 quincenas.`,
+    }[quincenas]
+  } else if (score >= 550) {
+    return {
+      2: `Cuotas elevadas. Solo elige 2 quincenas si tienes el dinero asegurado.`,
+      4: `Recomendado para tu score. Pagar puntual puede subir tu score hasta 30 puntos.`,
+      6: `Cuotas de $${cuota.toFixed(0)} MXN. No uses más del 60% de tu crédito disponible.`,
+      8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
+    }[quincenas]
+  } else {
+    return {
+      2: `Tu score es bajo. Pagar estas 2 quincenas a tiempo puede recuperar hasta 50 puntos.`,
+      4: `Opción más segura con tu score actual. Activa recordatorios de pago.`,
+      6: `No recomendado — con score bajo, más quincenas aumentan el riesgo de mora.`,
+      8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
+    }[quincenas]
+  }
+}
+
 function TabCalculadora({ usuario }) {
   const RATE = 0.03
   const QUINCENAS_OPTS = [2, 4, 6, 8]
   const SCORE_REQUERIDO_8 = 750
-  const RECOMENDACIONES = {
-    2: 'Pagas menos intereses pero cuotas más altas.',
-    4: '✅ Mejor opción — equilibrio ideal.',
-    6: 'Cuotas cómodas pero pagas más intereses.',
-  }
   const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const score = usuario?.score_crediticio ?? 0
 
-  const [monto, setMonto] = useState(1500)
-  const [rawInput, setRawInput] = useState('1500')
+  const [monto, setMonto] = useState(513)
+  const [rawInput, setRawInput] = useState('513')
   const [quincenas, setQuincenas] = useState(4)
+  const [recordatorio, setRecordatorio] = useState(false)
+  const [anticipacion, setAnticipacion] = useState('1 día')
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]?.url) return
+      try {
+        const hostname = new URL(tabs[0].url).hostname
+        if (hostname.includes('mercadolibre.com.mx')) {
+          setMonto(299)
+          setRawInput('299')
+        } else if (hostname.includes('amazon.com.mx')) {
+          setMonto(513)
+          setRawInput('513')
+        }
+      } catch {}
+    })
+  }, [])
 
   const total = monto * (1 + RATE * quincenas)
   const intereses = total - monto
@@ -210,7 +260,34 @@ function TabCalculadora({ usuario }) {
             <div className="calc__line-bar" />
           </div>
         </div>
-        {quincenas !== 8 && monto > 0 && <div className="calc__rec">{RECOMENDACIONES[quincenas]}</div>}
+        {monto > 0 && <div className="calc__rec">{getRecomendacion(quincenas, score, monto)}</div>}
+        <div className="calc__reminder">
+          <div className="calc__reminder-header">
+            <span className="calc__reminder-label">🔔 Recordatorio de pago</span>
+            <button
+              className={`calc__reminder-toggle ${recordatorio ? 'calc__reminder-toggle--on' : ''}`}
+              onClick={() => setRecordatorio(v => !v)}
+            >
+              <div className="calc__reminder-toggle-dot" />
+            </button>
+          </div>
+          {recordatorio && (
+            <div className="calc__reminder-opciones">
+              <span className="calc__reminder-sub">¿Con cuánto tiempo de anticipación?</span>
+              <div className="calc__reminder-btns">
+                {['1 día', '3 días', '1 semana'].map(op => (
+                  <button
+                    key={op}
+                    className={`calc__reminder-btn ${anticipacion === op ? 'calc__reminder-btn--active' : ''}`}
+                    onClick={() => setAnticipacion(op)}
+                  >
+                    {op}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="calc__desglose">
           <div className="calc__row"><span>Monto original</span><span>${fmt(monto)}</span></div>
           <hr className="calc__divider" />
@@ -233,10 +310,19 @@ function TabCalculadora({ usuario }) {
 }
 
 // ─── Tab: Buscar ─────────────────────────────────────────────────────────────
-function TabBuscar({ tiendas }) {
-  const [busqueda, setBusqueda] = useState('')
+function TabBuscar({ tiendas, busquedaInicial = '' }) {
+  const [busqueda, setBusqueda] = useState(busquedaInicial)
   const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
+  const topRef = useRef(null)
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'instant' })
+  }, [])
+
+  useEffect(() => {
+    if (busquedaInicial) setBusqueda(busquedaInicial)
+  }, [busquedaInicial])
 
   useEffect(() => {
     if (!busqueda.trim()) {
@@ -275,6 +361,7 @@ function TabBuscar({ tiendas }) {
 
   return (
     <div className="buscar">
+      <div ref={topRef} />
       <div className="buscar__input-wrapper">
         <span className="buscar__icon"><IconSearch /></span>
         <input
@@ -459,6 +546,20 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
               const tienda = tiendas.find(t => t.id_tienda === compra.id_tienda)
               return (
                 <div key={compra.id ?? i} className="historial__compra">
+                  <div className="historial__compra-logo">
+                    <img
+                      src={tienda?.logo}
+                      alt=""
+                      className="historial__compra-logo-img"
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                        e.target.nextSibling.style.display = 'flex'
+                      }}
+                    />
+                    <div className="historial__compra-logo-iniciales" style={{ display: 'none' }}>
+                      {tienda?.nombre?.slice(0, 2).toUpperCase()}
+                    </div>
+                  </div>
                   <div className="historial__compra-info">
                     <span className="historial__compra-tienda">{tienda?.nombre ?? 'Tienda Afiliada'}</span>
                     <span className="historial__compra-meta">
@@ -477,6 +578,25 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
           <p className="historial__empty">Aún no tienes compras financiadas</p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Notifications Dropdown ──────────────────────────────────────────────────
+function NotificationsDropdown({ onClose }) {
+  const ref = useRef()
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div className="notif-dropdown" ref={ref}>
+      <p className="notif-empty">No hay notificaciones</p>
     </div>
   )
 }
@@ -523,10 +643,45 @@ const NAV_TABS = [
 function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
   const [showSettings, setShowSettings] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [tiendas, setTiendas] = useState([])
   const [productos, setProductos] = useState([])
   const [historialCrediticio, setHistorialCrediticio] = useState(null)
   const [historialCompras, setHistorialCompras] = useState([])
+  const [tiendaCompatible, setTiendaCompatible] = useState(false)
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return
+
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (!tabs[0]?.url) return
+      if (
+        tabs[0].url.startsWith('chrome://') ||
+        tabs[0].url.startsWith('chrome-extension://')
+      ) {
+        setTiendaCompatible(false)
+        return
+      }
+
+      try {
+        const hostname = new URL(tabs[0].url).hostname
+
+        if (hostname.includes('amazon.com.mx') || hostname.includes('mercadolibre.com.mx')) {
+          setTiendaCompatible(true)
+          return
+        }
+
+        const { data } = await supabase
+          .from('tiendas_afiliadas')
+          .select('*')
+          .ilike('url', `%${hostname}%`)
+
+        setTiendaCompatible(data && data.length > 0)
+      } catch {
+        setTiendaCompatible(false)
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const descargarDatos = async () => {
@@ -555,28 +710,34 @@ function Dashboard({ usuario, onLogout }) {
     descargarDatos()
   }, [])
 
-  const isCompatible = useMemo(() => {
-    if (tiendas.length === 0) return true
-    try {
-      const { hostname } = window.location
-      if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') return true
-      return tiendas.some((t) => hostname.includes(t.url.split('.')[0]))
-    } catch { return true }
-  }, [tiendas])
+
 
   return (
     <div className="dashboard">
       <header className="dashboard__header">
         <img src={logo} alt="KueskiPay" className="dashboard__logo" />
         <div className="dashboard__header-icons" style={{ position: 'relative' }}>
-          <button className="icon-btn" aria-label="Notificaciones"><IconBell /></button>
+          <div className="bell-wrapper">
+            <button
+              className="icon-btn"
+              aria-label="Notificaciones"
+              onClick={() => { setShowNotifications((v) => !v); setShowSettings(false) }}
+            >
+              <IconBell />
+            </button>
+          </div>
           <button
             className="icon-btn"
             aria-label="Configuración"
-            onClick={() => setShowSettings((v) => !v)}
+            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false) }}
           >
             <IconSettings />
           </button>
+          {showNotifications && (
+            <NotificationsDropdown
+              onClose={() => setShowNotifications(false)}
+            />
+          )}
           {showSettings && (
             <SettingsDropdown
               usuario={usuario}
@@ -588,7 +749,7 @@ function Dashboard({ usuario, onLogout }) {
       </header>
 
       <main className="dashboard__content">
-        {tab === 'inicio' && <TabInicio isCompatible={isCompatible} usuario={usuario} />}
+        {tab === 'inicio' && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar' && <TabBuscar tiendas={tiendas} />}
         {tab === 'historial' && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}
