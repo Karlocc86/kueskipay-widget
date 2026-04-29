@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../supabaseClient' // Importamos nuestro cliente de Supabase
 import './Login.css'
 import logo from '../assets/KueskiPay-Logo.png'
 
@@ -24,14 +25,27 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false) // Nuevo estado para UX de carga
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (email === 'laura@kueski.com' && password === 'kueski123') {
-      setError('')
-      onLogin()
+    setError('')
+    setIsLoading(true)
+
+    // Petición real a Supabase para iniciar sesión
+    const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    })
+
+    if (supabaseError) {
+      // Si las credenciales fallan, mostramos error y detenemos la carga
+      setError('Correo o contraseña incorrectos.') 
+      setIsLoading(false)
     } else {
-      setError('Correo o contraseña incorrectos.')
+      // Login exitoso, el token ya se guardó y cambiamos de pantalla
+      setIsLoading(false)
+      onLogin()
     }
   }
 
@@ -49,6 +63,7 @@ function Login({ onLogin }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
+          disabled={isLoading}
         />
 
         <div className="login__password-wrapper">
@@ -59,6 +74,7 @@ function Login({ onLogin }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
+            disabled={isLoading}
           />
           <button
             type="button"
@@ -74,7 +90,9 @@ function Login({ onLogin }) {
 
         {error && <p className="login__error">{error}</p>}
 
-        <button type="submit" className="login__btn">Iniciar sesión</button>
+        <button type="submit" className="login__btn" disabled={isLoading}>
+          {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+        </button>
       </form>
 
       <p className="login__register">
