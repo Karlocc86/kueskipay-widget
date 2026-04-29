@@ -87,7 +87,7 @@ function CreditCard({ usuario, isCompatible }) {
 }
 
 // ─── Tab: Inicio ─────────────────────────────────────────────────────────────
-function TabInicio({ isCompatible, usuario }) {
+function TabInicio({ usuario, isCompatible }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const lineaTotal = disponible + adeudo
@@ -96,8 +96,10 @@ function TabInicio({ isCompatible, usuario }) {
   return (
     <div className="inicio">
       <div className={`badge ${isCompatible ? 'badge--green' : 'badge--red'}`}>
-        <span className="badge__icon">{isCompatible ? '✓' : '✗'}</span>
-        {isCompatible ? 'Este comercio es compatible con Kueski' : 'Este comercio no es compatible con Kueski'}
+        <span className="badge__icon">{isCompatible ? '✅' : '❌'}</span>
+        {isCompatible
+          ? 'Este comercio es compatible con Kueski'
+          : 'Este comercio no es compatible con Kueski'}
       </div>
       <CreditCard usuario={usuario} isCompatible={isCompatible} />
       <div className="inicio__credit-row">
@@ -159,8 +161,8 @@ function TabCalculadora({ usuario }) {
   const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const score = usuario?.score_crediticio ?? 0
 
-  const [monto, setMonto] = useState(1500)
-  const [rawInput, setRawInput] = useState('1500')
+  const [monto, setMonto] = useState(513)
+  const [rawInput, setRawInput] = useState('513')
   const [quincenas, setQuincenas] = useState(4)
 
   const total = monto * (1 + RATE * quincenas)
@@ -233,10 +235,14 @@ function TabCalculadora({ usuario }) {
 }
 
 // ─── Tab: Buscar ─────────────────────────────────────────────────────────────
-function TabBuscar({ tiendas }) {
-  const [busqueda, setBusqueda] = useState('')
+function TabBuscar({ tiendas, busquedaInicial = '' }) {
+  const [busqueda, setBusqueda] = useState(busquedaInicial)
   const [resultados, setResultados] = useState([])
   const [buscando, setBuscando] = useState(false)
+
+  useEffect(() => {
+    if (busquedaInicial) setBusqueda(busquedaInicial)
+  }, [busquedaInicial])
 
   useEffect(() => {
     if (!busqueda.trim()) {
@@ -481,6 +487,25 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
   )
 }
 
+// ─── Notifications Dropdown ──────────────────────────────────────────────────
+function NotificationsDropdown({ onClose }) {
+  const ref = useRef()
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div className="notif-dropdown" ref={ref}>
+      <p className="notif-empty">No hay notificaciones</p>
+    </div>
+  )
+}
+
 // ─── Settings Dropdown ────────────────────────────────────────────────────────
 function SettingsDropdown({ usuario, onLogout, onClose }) {
   const ref = useRef()
@@ -523,10 +548,45 @@ const NAV_TABS = [
 function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
   const [showSettings, setShowSettings] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [tiendas, setTiendas] = useState([])
   const [productos, setProductos] = useState([])
   const [historialCrediticio, setHistorialCrediticio] = useState(null)
   const [historialCompras, setHistorialCompras] = useState([])
+  const [tiendaCompatible, setTiendaCompatible] = useState(false)
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.tabs) return
+
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (!tabs[0]?.url) return
+      if (
+        tabs[0].url.startsWith('chrome://') ||
+        tabs[0].url.startsWith('chrome-extension://')
+      ) {
+        setTiendaCompatible(false)
+        return
+      }
+
+      try {
+        const hostname = new URL(tabs[0].url).hostname
+
+        if (hostname.includes('amazon.com.mx')) {
+          setTiendaCompatible(true)
+          return
+        }
+
+        const { data } = await supabase
+          .from('tiendas_afiliadas')
+          .select('*')
+          .ilike('url', `%${hostname}%`)
+
+        setTiendaCompatible(data && data.length > 0)
+      } catch {
+        setTiendaCompatible(false)
+      }
+    })
+  }, [])
 
   useEffect(() => {
     const descargarDatos = async () => {
@@ -555,28 +615,34 @@ function Dashboard({ usuario, onLogout }) {
     descargarDatos()
   }, [])
 
-  const isCompatible = useMemo(() => {
-    if (tiendas.length === 0) return true
-    try {
-      const { hostname } = window.location
-      if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') return true
-      return tiendas.some((t) => hostname.includes(t.url.split('.')[0]))
-    } catch { return true }
-  }, [tiendas])
+
 
   return (
     <div className="dashboard">
       <header className="dashboard__header">
         <img src={logo} alt="KueskiPay" className="dashboard__logo" />
         <div className="dashboard__header-icons" style={{ position: 'relative' }}>
-          <button className="icon-btn" aria-label="Notificaciones"><IconBell /></button>
+          <div className="bell-wrapper">
+            <button
+              className="icon-btn"
+              aria-label="Notificaciones"
+              onClick={() => { setShowNotifications((v) => !v); setShowSettings(false) }}
+            >
+              <IconBell />
+            </button>
+          </div>
           <button
             className="icon-btn"
             aria-label="Configuración"
-            onClick={() => setShowSettings((v) => !v)}
+            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false) }}
           >
             <IconSettings />
           </button>
+          {showNotifications && (
+            <NotificationsDropdown
+              onClose={() => setShowNotifications(false)}
+            />
+          )}
           {showSettings && (
             <SettingsDropdown
               usuario={usuario}
@@ -588,7 +654,7 @@ function Dashboard({ usuario, onLogout }) {
       </header>
 
       <main className="dashboard__content">
-        {tab === 'inicio' && <TabInicio isCompatible={isCompatible} usuario={usuario} />}
+        {tab === 'inicio' && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar' && <TabBuscar tiendas={tiendas} />}
         {tab === 'historial' && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}

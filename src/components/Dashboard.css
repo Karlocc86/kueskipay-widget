@@ -368,6 +368,68 @@
   background: #eff6ff;
 }
 
+/* ─── Producto Detectado ─────────────────────────────────────────────────── */
+
+.inicio__producto-detectado {
+  margin: 0 12px 10px;
+  padding: 12px 14px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inicio__producto-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inicio__producto-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a73e8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.inicio__producto-nombre {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inicio__producto-precio {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.inicio__producto-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 14px;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.inicio__producto-btn:hover {
+  background: #1558b0;
+}
+
 /* ─── Tab: Calculadora ───────────────────────────────────────────────────── */
 
 .calc {
@@ -828,14 +890,26 @@
   border-radius: 8px;
   border-top: 1px solid #f3f4f6;
   background: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .comparador-fila:first-child {
   border-top: none;
 }
 
+.comparador-fila:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: #EFF6FF;
+}
+
 .comparador-fila--mejor {
   background: #F0FDF4;
+}
+
+.comparador-fila--mejor:hover {
+  background: #DCFCE7;
 }
 
 .comparador-fila__left {
@@ -889,11 +963,130 @@
   color: #00C46A;
 }
 
+.comparador-fila__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .comparador-fila__precio {
   font-size: 14px;
   font-weight: 700;
   color: #1A73E8;
-  flex-shrink: 0;
+}
+
+.comparador-fila__arrow {
+  font-size: 14px;
+  color: #9ca3af;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.comparador-fila:hover .comparador-fila__arrow {
+  transform: translateX(3px);
+  color: #1a73e8;
+}
+
+/* ─── Bell badge ─────────────────────────────────────────────────────────── */
+
+.bell-wrapper {
+  position: relative;
+}
+
+.bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ─── Notifications Dropdown ─────────────────────────────────────────────── */
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  min-width: 220px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.notif-item {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-item__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notif-item__label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1a73e8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.notif-item__nombre {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item__precio {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.notif-item__btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 14px;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.notif-item__btn:hover {
+  background: #1558b0;
+}
+
+.notif-empty {
+  padding: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
 }
 
 /* ─── Settings Dropdown ──────────────────────────────────────────────────── */
