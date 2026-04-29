@@ -39,9 +39,18 @@ function App() {
     </div>
   )
 
+  const handleLogin = async (authUser) => {
+    const { data } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('correo', authUser.email)
+      .single()
+    if (data) setUsuario(data)
+  }
+
   return usuario
     ? <Dashboard usuario={usuario} onLogout={() => supabase.auth.signOut()} />
-    : <Login onLogin={setUsuario} />
+    : <Login onLogin={handleLogin} />
 }
 
 export default App
