@@ -233,11 +233,19 @@ function TabCalculadora({ usuario }) {
 }
 
 // ─── Tab: Buscar ─────────────────────────────────────────────────────────────
-function TabBuscar({ productos, tiendas }) {
+function TabBuscar({ tiendas }) {
   const [busqueda, setBusqueda] = useState('')
-  const productosFiltrados = productos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  )
+
+  const tiendasFiltradas = busqueda
+    ? tiendas.filter(t => t.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    : tiendas
+
+  const getIniciales = (nombre) => {
+    const palabras = nombre.trim().split(' ')
+    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase()
+    return (palabras[0][0] + palabras[1][0]).toUpperCase()
+  }
+
   return (
     <div className="buscar">
       <div className="buscar__input-wrapper">
@@ -250,31 +258,44 @@ function TabBuscar({ productos, tiendas }) {
           onChange={(e) => setBusqueda(e.target.value)}
         />
       </div>
-      <div className="buscar__lista">
-        {productosFiltrados.length > 0 ? (
-          productosFiltrados.map((producto) => {
-            const tienda = tiendas.find(t => t.id_tienda === producto.id_tienda)
-            return (
-              <div key={producto.id_producto} className="producto-card">
-                <div className="producto-card__header">
-                  <span className="producto-card__nombre">{producto.nombre}</span>
-                  <span className="producto-card__precio">${producto.precio.toLocaleString('es-MX')}</span>
+
+      {!busqueda && (
+        <h3 className="buscar__seccion-titulo">Tiendas afiliadas</h3>
+      )}
+
+      {tiendasFiltradas.length > 0 ? (
+        <div className="buscar__tiendas-grid">
+          {tiendasFiltradas.map((tienda) => (
+            <div key={tienda.id_tienda} className="tienda-card">
+              <div className="tienda-card__logo-wrapper">
+                <img
+                  src={tienda.logo}
+                  alt={tienda.nombre}
+                  className="tienda-card__logo"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    e.target.nextSibling.style.display = 'flex'
+                  }}
+                />
+                <div className="tienda-card__iniciales" style={{ display: 'none' }}>
+                  {getIniciales(tienda.nombre)}
                 </div>
-                <span className="producto-card__tienda">
-                  <IconStore /> {tienda ? tienda.nombre : 'Tienda Afiliada'}
-                </span>
-                <a href={`https://${producto.url_producto}`} target="_blank" rel="noreferrer" className="producto-card__link">
-                  Ver en tienda
-                </a>
               </div>
-            )
-          })
-        ) : (
-          <p style={{ textAlign: 'center', color: '#6b7280', marginTop: '20px' }}>
-            No se encontraron productos.
-          </p>
-        )}
-      </div>
+              <span className="tienda-card__nombre">{tienda.nombre}</span>
+              <a
+                href={`https://${tienda.url}`}
+                target="_blank"
+                rel="noreferrer"
+                className="tienda-card__link"
+              >
+                Ver tienda →
+              </a>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="buscar__empty">No se encontraron tiendas</p>
+      )}
     </div>
   )
 }
@@ -492,7 +513,7 @@ function Dashboard({ usuario, onLogout }) {
       <main className="dashboard__content">
         {tab === 'inicio' && <TabInicio isCompatible={isCompatible} usuario={usuario} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
-        {tab === 'buscar' && <TabBuscar productos={productos} tiendas={tiendas} />}
+        {tab === 'buscar' && <TabBuscar tiendas={tiendas} />}
         {tab === 'historial' && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}
       </main>
 
