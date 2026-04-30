@@ -56,20 +56,20 @@ npm run build
 
 ## Base de datos
 
-| Tabla | Descripción |
-|-------|-------------|
-| `usuarios` | Datos del usuario, crédito y score |
-| `tiendas_afiliadas` | Comercios donde aplica KueskiPay |
-| `productos` | Catálogo de productos con precios por tienda |
-| `historial_compras` | Registro de compras financiadas |
-| `historial_crediticio` | Score y estadísticas de pagos |
+| Tabla                  | Descripción                                  |
+| ---------------------- | -------------------------------------------- |
+| `usuarios`             | Datos del usuario, crédito y score           |
+| `tiendas_afiliadas`    | Comercios donde aplica KueskiPay             |
+| `productos`            | Catálogo de productos con precios por tienda |
+| `historial_compras`    | Registro de compras financiadas              |
+| `historial_crediticio` | Score y estadísticas de pagos                |
 
 ## Usuarios de prueba
 
-| Email | Contraseña | Score | Perfil |
-|-------|-----------|-------|--------|
-| karlo@gmail.com | cisco | 850 | Historial excelente |
-| camila@gmail.com | cisco | 420 | Historial malo |
-| laura@gmail.com | cisco | 720 | Historial bueno |
-| carlos@gmail.com | cisco | 780 | Historial muy bueno |
-| ana@gmail.com | cisco | 580 | Historial regular |
+| Email            | Contraseña | Score | Perfil              |
+| ---------------- | ---------- | ----- | ------------------- |
+| karlo@gmail.com  | cisco      | 850   | Historial excelente |
+| camila@gmail.com | cisco      | 420   | Historial malo      |
+| laura@gmail.com  | cisco      | 720   | Historial bueno     |
+| carlos@gmail.com | cisco      | 780   | Historial muy bueno |
+| ana@gmail.com    | cisco      | 580   | Historial regular   |

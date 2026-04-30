@@ -71,17 +71,73 @@ function DonutChart({ disponible, total, isCompatible }) {
 
 // ─── Credit Card ─────────────────────────────────────────────────────────────
 function CreditCard({ usuario, isCompatible }) {
+  const [cardFlipped, setCardFlipped] = useState(false)
+  const [nipVisible, setNipVisible] = useState(false)
+  const nip = usuario?.numero_tarjeta
+    ? `${usuario.numero_tarjeta.slice(-2)}${usuario.numero_tarjeta.slice(0, 2)}`
+    : '4821'
+
   return (
-    <div className={`credit-card ${!isCompatible ? 'credit-card--disabled' : ''}`}>
-      <div className="credit-card__top">
-        <span className="credit-card__brand">KueskiPay</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2">
-          <path d="M8 2a9 9 0 0 1 0 20" /><path d="M12 6a5 5 0 0 1 0 12" /><circle cx="16" cy="12" r="1.5" fill="rgba(255,255,255,0.8)" stroke="none" />
-        </svg>
+    <div
+      className={`credit-card-container ${!isCompatible ? 'credit-card--disabled' : ''}`}
+      onClick={() => setCardFlipped(v => !v)}
+    >
+      <div className={`credit-card-inner ${cardFlipped ? 'credit-card-inner--flipped' : ''}`}>
+
+        {/* FRENTE */}
+        <div className="credit-card credit-card--front">
+          <div className="credit-card__top">
+            <span className="credit-card__brand">KueskiPay</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2">
+              <path d="M8 2a9 9 0 0 1 0 20" />
+              <path d="M12 6a5 5 0 0 1 0 12" />
+              <circle cx="16" cy="12" r="1.5" fill="rgba(255,255,255,0.8)" stroke="none" />
+            </svg>
+          </div>
+          <div className="credit-card__name">{usuario?.nombre ?? '—'}</div>
+          <div className="credit-card__number">{usuario?.numero_tarjeta ? `**** **** **** ${usuario.numero_tarjeta}` : '**** **** **** ****'}</div>
+          <div className="credit-card__bottom">
+            <span className="credit-card__type">CRÉDITO KUESKIPAY</span>
+
+          </div>
+        </div>
+
+        {/* REVERSO */}
+        <div className="credit-card credit-card--back">
+          <div className="credit-card__stripe" />
+          <div className="credit-card__back-content">
+            <div className="credit-card__back-row">
+              <span className="credit-card__back-label">TITULAR</span>
+              <span className="credit-card__back-value-sm">{usuario?.nombre ?? '—'}</span>
+            </div>
+            <div className="credit-card__back-row">
+              <span className="credit-card__back-label">VENCE</span>
+              <span className="credit-card__back-value">12/27</span>
+            </div>
+            <div
+              className="credit-card__back-row credit-card__back-row--clickable"
+              onClick={(e) => {
+                e.stopPropagation()
+                setNipVisible(v => !v)
+              }}
+            >
+              <span className="credit-card__back-label">NIP</span>
+              <div className="credit-card__nip-wrapper">
+                <span className="credit-card__back-value">
+                  {nipVisible ? nip : '• • • •'}
+                </span>
+                <span className="credit-card__nip-hint">
+                  {nipVisible ? 'ocultar' : '👁 ver'}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="credit-card__back-footer">
+            <span className="credit-card__back-hint">Toca para voltear</span>
+          </div>
+        </div>
+
       </div>
-      <div className="credit-card__name">{usuario?.nombre ?? '—'}</div>
-      <div className="credit-card__number">{usuario?.numero_tarjeta ?? '**** **** **** ****'}</div>
-      <div className="credit-card__bottom"><span className="credit-card__type">CRÉDITO KUESKIPAY</span></div>
     </div>
   )
 }
@@ -185,16 +241,23 @@ function getRecomendacion(quincenas, score, monto) {
 
 function TabCalculadora({ usuario }) {
   const RATE = 0.03
-  const QUINCENAS_OPTS = [2, 4, 6, 8]
-  const SCORE_REQUERIDO_8 = 750
   const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const score = usuario?.score_crediticio ?? 0
+
+  const getQuincenasDisponibles = (s) => {
+    if (s >= 750) return [2, 4, 6, 8, 10, 12]
+    if (s >= 650) return [2, 4, 6, 8]
+    if (s >= 550) return [2, 4, 6]
+    return [2, 4]
+  }
+
+  const quincenasOpciones = getQuincenasDisponibles(score)
 
   const [monto, setMonto] = useState(513)
   const [rawInput, setRawInput] = useState('513')
   const [quincenas, setQuincenas] = useState(4)
-  const [recordatorio, setRecordatorio] = useState(false)
-  const [anticipacion, setAnticipacion] = useState('1 día')
+  const [recordatorio, setRecordatorio] = useState(true)
+  const [tipoRecordatorio, setTipoRecordatorio] = useState('Ocasional')
 
   useEffect(() => {
     if (typeof chrome === 'undefined' || !chrome.tabs) return
@@ -237,23 +300,20 @@ function TabCalculadora({ usuario }) {
         </div>
         <div className="calc__selector">
           <div className="calc__dots-row">
-            {QUINCENAS_OPTS.map((q) => {
-              const locked = q === 8 && score < SCORE_REQUERIDO_8
+            {quincenasOpciones.map((q) => {
               const active = quincenas === q
               return (
                 <div key={q} className="calc__dot-col">
-                  <button
-                    className={`calc__dot ${active ? 'calc__dot--active' : ''} ${locked ? 'calc__dot--locked' : ''}`}
-                    onClick={() => !locked && setQuincenas(q)}
-                    disabled={locked}
-                    title={locked ? 'Mejora tu score para desbloquear' : undefined}
-                  >
-                    {locked ? '🔒' : null}
-                  </button>
-                  <span className={`calc__q-label ${active ? 'calc__q-label--active' : ''} ${locked ? 'calc__q-label--locked' : ''}`}>
-                    {q}<br />QUINCENAS
+                  <span className={`calc__q-number ${active ? 'calc__q-number--active' : ''}`}>
+                    {q}
                   </span>
-                  {locked && <span className="calc__tooltip">Mejora tu score para desbloquear</span>}
+                  <button
+                    className={`calc__dot ${active ? 'calc__dot--active' : ''}`}
+                    onClick={() => setQuincenas(q)}
+                  />
+                  <span className={`calc__q-label ${active ? 'calc__q-label--active' : ''}`}>
+                    QUINCENAS
+                  </span>
                 </div>
               )
             })}
@@ -263,7 +323,7 @@ function TabCalculadora({ usuario }) {
         {monto > 0 && <div className="calc__rec">{getRecomendacion(quincenas, score, monto)}</div>}
         <div className="calc__reminder">
           <div className="calc__reminder-header">
-            <span className="calc__reminder-label">🔔 Recordatorio de pago</span>
+            <span className="calc__reminder-label">Recordatorio de pago</span>
             <button
               className={`calc__reminder-toggle ${recordatorio ? 'calc__reminder-toggle--on' : ''}`}
               onClick={() => setRecordatorio(v => !v)}
@@ -272,19 +332,24 @@ function TabCalculadora({ usuario }) {
             </button>
           </div>
           {recordatorio && (
-            <div className="calc__reminder-opciones">
-              <span className="calc__reminder-sub">¿Con cuánto tiempo de anticipación?</span>
+            <div>
+              <span className="calc__reminder-sub">¿Cómo quieres que te avisemos?</span>
               <div className="calc__reminder-btns">
-                {['1 día', '3 días', '1 semana'].map(op => (
+                {['Único', 'Ocasional', 'Frecuente'].map(op => (
                   <button
                     key={op}
-                    className={`calc__reminder-btn ${anticipacion === op ? 'calc__reminder-btn--active' : ''}`}
-                    onClick={() => setAnticipacion(op)}
+                    className={`calc__reminder-btn ${tipoRecordatorio === op ? 'calc__reminder-btn--active' : ''}`}
+                    onClick={() => setTipoRecordatorio(op)}
                   >
                     {op}
                   </button>
                 ))}
               </div>
+              <p className="calc__reminder-desc">
+                {tipoRecordatorio === 'Único' && 'Te avisamos 1 día antes del vencimiento.'}
+                {tipoRecordatorio === 'Ocasional' && 'Te avisamos 3 días antes, 1 día antes y el día del vencimiento.'}
+                {tipoRecordatorio === 'Frecuente' && 'Te avisamos diario a partir de 1 semana antes del vencimiento.'}
+              </p>
             </div>
           )}
         </div>
