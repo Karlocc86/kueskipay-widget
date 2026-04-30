@@ -214,6 +214,9 @@ function getRecomendacion(quincenas, score, monto) {
       4: `Opción equilibrada. Tu score te permite acceder a mejores tasas en el futuro.`,
       6: `Cuotas de $${cuota.toFixed(0)} MXN. Con tu historial podrías solicitar un aumento de línea.`,
       8: `Aunque puedes pagarlo, con tu score es mejor en menos quincenas para ahorrar intereses.`,
+      10: `Cuotas muy cómodas de $${cuota.toFixed(0)} MXN. Considera que pagarás más intereses en total.`,
+      12: `Máximo plazo disponible. Cuotas de $${cuota.toFixed(0)} MXN. Solo recomendado para montos grandes.`
+    
     }[quincenas]
   } else if (score >= 650) {
     return {
@@ -254,13 +257,13 @@ function TabCalculadora({ usuario }) {
   const quincenasOpciones = getQuincenasDisponibles(score)
 
   const [monto, setMonto] = useState(513)
-  const [rawInput, setRawInput] = useState('513')
+  const [rawInput, setRawInput] = useState('513');
   const [quincenas, setQuincenas] = useState(4)
-  const [recordatorio, setRecordatorio] = useState(true)
-  const [tipoRecordatorio, setTipoRecordatorio] = useState('Ocasional')
+  const [recordatorio, setRecordatorio] = useState(true);
+  const [tipoRecordatorio, setTipoRecordatorio] = useState('Ocasional');
 
   useEffect(() => {
-    if (typeof chrome === 'undefined' || !chrome.tabs) return
+    if (typeof chrome === 'undefined' || !chrome.tabs) return;
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (!tabs[0]?.url) return
       try {
