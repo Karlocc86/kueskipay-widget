@@ -18,7 +18,10 @@ function App() {
           .select('*')
           .eq('correo', session.user.email)
           .single()
-        if (data) setUsuario(data)
+        if (data) {
+          setUsuario(data)
+          try { chrome.storage.local.set({ kpay_user: data }) } catch (_) {}
+        }
       }
       setLoading(false)
     }).catch(() => {
@@ -45,11 +48,19 @@ function App() {
       .select('*')
       .eq('correo', authUser.email)
       .single()
-    if (data) setUsuario(data)
+    if (data) {
+      setUsuario(data)
+      try { chrome.storage.local.set({ kpay_user: data }) } catch (_) {}
+    }
+  }
+
+  const handleLogout = () => {
+    supabase.auth.signOut()
+    try { chrome.storage.local.remove('kpay_user') } catch (_) {}
   }
 
   return usuario
-    ? <Dashboard usuario={usuario} onLogout={() => supabase.auth.signOut()} />
+    ? <Dashboard usuario={usuario} onLogout={handleLogout} />
     : <Login onLogin={handleLogin} />
 }
 
