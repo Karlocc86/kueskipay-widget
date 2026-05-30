@@ -36,7 +36,7 @@
   width: auto;
 }
 
-/* ─── Header brand cluster (plant logo + flip toggle) ────────────────────── */
+/* ─── Header brand cluster (plant logo + slide toggle) ───────────────────── */
 .dashboard__brand {
   display: inline-flex;
   align-items: center;
@@ -45,35 +45,31 @@
 
 .dashboard__plant-logo {
   height: 26px;
-  width: auto;
+  width: 26px;
   object-fit: contain;
-  display: block;
   flex-shrink: 0;
 }
 
-/* ─── Brand toggle (flip-vertical on swap) ───────────────────────────────── */
+/* ─── Brand toggle (single tappable logo, slides horizontally on swap) ──── */
 .brand-toggle {
   position: relative;
-  width: 82px;
-  height: 24px;
+  width: 76px;
+  height: 22px;
   background: none;
   border: 0;
   padding: 0;
   margin: 0;
   cursor: pointer;
-  overflow: visible;
+  overflow: hidden;
+  border-radius: 4px;
   flex-shrink: 0;
-  perspective: 320px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .brand-toggle:focus-visible {
   outline: 2px solid var(--brand-color);
   outline-offset: 3px;
-  border-radius: 4px;
 }
-
-.brand-toggle:active { transform: scale(0.97); }
 
 .brand-toggle__img {
   position: absolute;
@@ -81,25 +77,25 @@
   left: 0;
   height: 22px;
   width: auto;
-  object-fit: contain;
-  transform-origin: center;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.18s ease;
+  /* slightly bouncy easing */
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.32s ease;
   user-select: none;
   -webkit-user-drag: none;
   pointer-events: none;
   will-change: transform, opacity;
 }
 
-/* Default (brand = kueskipay): kueskipay flat, kueski flipped below */
-.brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(0deg);   opacity: 1; }
-.brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(-90deg);  opacity: 0; }
+/* default: kueskipay visible, kueski waiting off-stage to the RIGHT */
+.brand-toggle__img--kueskipay { transform: translate(0, -50%); opacity: 1; }
+.brand-toggle__img--kueski    { transform: translate(120%, -50%); opacity: 0; }
 
-/* Active (brand = kueski): kueski flat, kueskipay flipped above */
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(0deg);  opacity: 1; }
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(90deg); opacity: 0; }
+/* swapped: kueski visible, kueskipay slid OFF to the LEFT */
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translate(0, -50%); opacity: 1; }
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translate(-120%, -50%); opacity: 0; }
+
+.brand-toggle:hover .brand-toggle__img { filter: brightness(0.96); }
+.brand-toggle:active { transform: scale(0.97); }
 
 .dashboard__header-icons {
   display: flex;
@@ -165,72 +161,166 @@
   border-top-color: var(--brand-color);
 }
 
-/* ─── Badge ──────────────────────────────────────────────────────────────── */
+/* ─── Site Status Card ───────────────────────────────────────────────────── */
 
-.badge {
-  display: flex;
+.site-status {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
-  gap: 7px;
-  margin: 10px 12px 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 10px;
+  margin: 12px 12px 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fafbfc;
+  border: 1px solid #eef1f5;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.25s, border-color 0.25s;
 }
 
-.badge--green {
-  background: #f0fdf4;
-  color: #166534;
-  border: 1px solid #bbf7d0;
+/* compatible: tint subtly with the active brand */
+.site-status--ok {
+  background: linear-gradient(135deg, var(--brand-color-soft) 0%, #fafbfc 70%);
+  border-color: color-mix(in srgb, var(--brand-color) 18%, transparent);
 }
 
-.badge--red {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-.badge__icon {
-  font-weight: 700;
-  font-size: 13px;
+/* live status pulse dot */
+.site-status__pulse {
+  position: relative;
+  width: 8px;
+  height: 8px;
   flex-shrink: 0;
 }
 
-/* ─── KueskiPay wordmark (credit card) ──────────────────────────────────── */
-
-.cc-brand {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  line-height: 1;
+.site-status__pulse-dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #9ca3af;
 }
 
-.cc-brand__kueski,
-.cc-brand__pay {
-  font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #ffffff;
-  letter-spacing: -0.3px;
-  line-height: 1;
+.site-status--ok .site-status__pulse-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  animation: site-pulse 2.2s ease-out infinite;
 }
 
-.cc-brand__kueski {
-  font-size: 17px;
+@keyframes site-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* site favicon / logo */
+.site-status__logo {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.site-status__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+}
+
+.site-status__initials {
+  font-size: 10px;
   font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.3px;
 }
 
-.cc-brand__pay {
-  font-size: 17px;
-  font-weight: 500;
-  opacity: 0.92;
+.site-status--off .site-status__logo img {
+  filter: grayscale(1);
+  opacity: 0.55;
 }
 
-.cc-brand--sm .cc-brand__kueski,
-.cc-brand--sm .cc-brand__pay {
-  font-size: 13px;
+/* body */
+.site-status__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-.cc-brand--sm {
+.site-status__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-status__url {
+  font-size: 10.5px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-status--off .site-status__name { color: #4b5563; }
+
+/* status pill on the right */
+.site-status__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.site-status--ok .site-status__pill {
+  background: var(--brand-color);
+  color: #ffffff;
+}
+
+.site-status--off .site-status__pill {
+  background: transparent;
+  padding: 0;
+}
+
+.site-status__cta {
+  display: inline-flex;
+  align-items: center;
   gap: 3px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  padding: 5px 9px 5px 10px;
+  border-radius: 999px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.site-status__cta:hover {
+  border-color: var(--brand-color);
+  color: var(--brand-color);
+  background: var(--brand-color-soft);
 }
 
 /* ─── Credit Card (v2 — premium) ─────────────────────────────────────────── */
@@ -340,16 +430,41 @@
   align-items: flex-end;
 }
 
-/* ── KueskiPay logo on card ───────────────────────────────────────────── */
-.credit-card__brand-logo {
-  height: 18px;
-  width: auto;
-  object-fit: contain;
-  display: block;
+/* ── Kueski Pay wordmark ───────────────────────────────────────────────── */
+.cc-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
 }
 
-.credit-card__brand-logo--sm {
-  height: 14px;
+.cc-brand__kueski,
+.cc-brand__pay {
+  font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  line-height: 1;
+}
+
+.cc-brand__kueski {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.cc-brand__pay {
+  font-size: 17px;
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+/* small variant for the back face */
+.cc-brand--sm .cc-brand__kueski,
+.cc-brand--sm .cc-brand__pay {
+  font-size: 13px;
+}
+
+.cc-brand--sm {
+  gap: 3px;
 }
 
 /* Type tag */
@@ -584,163 +699,6 @@
   margin-top: 4px;
 }
 
-/* ─── Site Status Card ───────────────────────────────────────────────────── */
-
-.site-status {
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 12px 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: #fafbfc;
-  border: 1px solid #eef1f5;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.25s, border-color 0.25s;
-}
-
-.site-status--ok {
-  background: linear-gradient(135deg, var(--brand-color-soft) 0%, #fafbfc 70%);
-  border-color: color-mix(in srgb, var(--brand-color) 18%, transparent);
-}
-
-.site-status__pulse {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
-}
-
-.site-status__pulse-dot {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #9ca3af;
-}
-
-.site-status--ok .site-status__pulse-dot {
-  background: #10b981;
-  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
-  animation: site-pulse 2.2s ease-out infinite;
-}
-
-@keyframes site-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
-  70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-.site-status__logo {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: #ffffff;
-  border: 1px solid #eef1f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-.site-status__logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 3px;
-}
-
-.site-status__initials {
-  font-size: 10px;
-  font-weight: 700;
-  color: #6b7280;
-  letter-spacing: 0.3px;
-}
-
-.site-status--off .site-status__logo img {
-  filter: grayscale(1);
-  opacity: 0.55;
-}
-
-.site-status__body {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.site-status__name {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1a1a2e;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.site-status__url {
-  font-size: 10.5px;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-variant-numeric: tabular-nums;
-}
-
-.site-status--off .site-status__name { color: #4b5563; }
-
-.site-status__pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  padding: 5px 9px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.site-status--ok .site-status__pill {
-  background: var(--brand-color);
-  color: #ffffff;
-}
-
-.site-status--off .site-status__pill {
-  background: transparent;
-  padding: 0;
-}
-
-.site-status__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  color: #4b5563;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  text-transform: uppercase;
-  padding: 5px 9px 5px 10px;
-  border-radius: 999px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
-}
-
-.site-status__cta:hover {
-  border-color: var(--brand-color);
-  color: var(--brand-color);
-  background: var(--brand-color-soft);
-}
-
 /* ─── Tab: Inicio ────────────────────────────────────────────────────────── */
 
 .inicio {
@@ -755,33 +713,7 @@
   padding: 2px 16px 10px;
 }
 
-.inicio__linea {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.inicio__linea-label {
-  font-size: 10px;
-  color: #9ca3af;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.inicio__linea-amount {
-  font-size: 19px;
-  font-weight: 700;
-  color: #1a1a2e;
-  line-height: 1.1;
-}
-
-.inicio__linea-used {
-  font-size: 11px;
-}
-
 /* ─── Credit summary card (donut + amounts) ──────────────────────────────── */
-
 .credit-summary {
   display: flex;
   align-items: center;
@@ -868,6 +800,31 @@
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.inicio__linea {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inicio__linea-label {
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.inicio__linea-amount {
+  font-size: 19px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.1;
+}
+
+.inicio__linea-used {
+  font-size: 11px;
 }
 
 /* Quick actions */
@@ -1763,6 +1720,7 @@
   gap: 18px;
 }
 
+/* Keep every direct child at its natural height — the body scrolls, no shrinking. */
 .settings-panel__body > * { flex-shrink: 0; }
 
 /* Profile card */
@@ -1963,7 +1921,7 @@
   letter-spacing: 0.3px;
 }
 
-/* ─── Support / Centro de Ayuda sub-view ─────────────────────────────────── */
+/* ─── Support / Customer Service sub-view ────────────────────────────────── */
 
 .support-hero {
   position: relative;
@@ -1979,6 +1937,7 @@
 }
 
 .support-hero::after {
+  /* soft halo in corner */
   content: "";
   position: absolute;
   top: -40px;
@@ -2051,7 +2010,7 @@
 
 .support-hero__cta:hover { transform: translateY(-1px); }
 
-/* Channels */
+/* Channels list */
 .support-channels {
   display: flex;
   flex-direction: column;
@@ -2167,6 +2126,7 @@
   font-size: 12px;
   line-height: 1.55;
   color: #4b5563;
+  text-wrap: pretty;
 }
 
 /* Report a problem */
@@ -2585,6 +2545,7 @@
   margin: 0;
   line-height: 1.45;
   max-width: 280px;
+  text-wrap: pretty;
 }
 
 .inicio-k__placeholder-tag {

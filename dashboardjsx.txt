@@ -1,73 +1,57 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { supabase } from '../supabaseClient'
-import './Dashboard.css'
+// ─── Dashboard ─────────────────────────────────────────────────────────────
+const { useState: useStateD, useMemo, useEffect, useRef } = React;
+const supabaseD = window.supabase;
+const LOGO_SRC_D = 'assets/KueskiPay-Logo.png';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
-const IconBell = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-const IconSettings = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-const IconHome = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-const IconCalc = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="8" y1="7" x2="16" y2="7" /><line x1="8" y1="11" x2="8.01" y2="11" strokeWidth="3" /><line x1="12" y1="11" x2="12.01" y2="11" strokeWidth="3" /><line x1="16" y1="11" x2="16.01" y2="11" strokeWidth="3" /><line x1="8" y1="15" x2="8.01" y2="15" strokeWidth="3" /><line x1="12" y1="15" x2="12.01" y2="15" strokeWidth="3" /><line x1="16" y1="15" x2="16.01" y2="15" strokeWidth="3" /><line x1="8" y1="19" x2="12" y2="19" /><line x1="16" y1="19" x2="16.01" y2="19" strokeWidth="3" /></svg>
-const IconSearch = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-const IconChart = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
-const IconMoney = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="12" cy="12" r="3" /></svg>
-const IconCalendar = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-const IconStore = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4" /><circle cx="9" cy="19" r="1" /><circle cx="20" cy="19" r="1" /></svg>
-
-// ─── Icons (settings + support) ──────────────────────────────────────────────
-const IconChevron  = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-const IconBack     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-const IconClose    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-const IconUser     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-const IconCard     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
-const IconShield   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-const IconBellSm   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-const IconGlobe    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" /></svg>
-const IconHelp     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-const IconChat     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-const IconWhatsapp = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
-const IconPhone    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-const IconMail     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-const IconAlert    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-const IconLogout   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-const IconCheck    = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+const IconBell = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>;
+const IconSettings = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
+const IconHome = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>;
+const IconCalc = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="8" y1="7" x2="16" y2="7" /><line x1="8" y1="11" x2="8.01" y2="11" strokeWidth="3" /><line x1="12" y1="11" x2="12.01" y2="11" strokeWidth="3" /><line x1="16" y1="11" x2="16.01" y2="11" strokeWidth="3" /><line x1="8" y1="15" x2="8.01" y2="15" strokeWidth="3" /><line x1="12" y1="15" x2="12.01" y2="15" strokeWidth="3" /><line x1="16" y1="15" x2="16.01" y2="15" strokeWidth="3" /><line x1="8" y1="19" x2="12" y2="19" /><line x1="16" y1="19" x2="16.01" y2="19" strokeWidth="3" /></svg>;
+const IconSearch = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>;
+const IconChart = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
+const IconMoney = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><circle cx="12" cy="12" r="3" /></svg>;
+const IconCalendar = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>;
+const IconStore = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4" /><circle cx="9" cy="19" r="1" /><circle cx="20" cy="19" r="1" /></svg>;
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 function formatVencimiento(fechaStr) {
-  if (!fechaStr) return ''
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  const fecha = new Date(fechaStr + 'T00:00:00')
-  const diff = Math.round((fecha - hoy) / (1000 * 60 * 60 * 24))
-  if (diff < 0) return 'Pago vencido'
-  if (diff === 0) return 'Vence hoy'
-  return `Vence en ${diff} día${diff !== 1 ? 's' : ''}`
+  if (!fechaStr) return '';
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fecha = new Date(fechaStr + 'T00:00:00');
+  const diff = Math.round((fecha - hoy) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return 'Pago vencido';
+  if (diff === 0) return 'Vence hoy';
+  return `Vence en ${diff} día${diff !== 1 ? 's' : ''}`;
 }
 
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ disponible, total, isCompatible }) {
-  const RADIUS = 46
-  const STROKE = 12
-  const SIZE = 130
-  const C = SIZE / 2
-  const CIRCUMFERENCE = 2 * Math.PI * RADIUS
-  const pct = total > 0 ? (total - disponible) / total : 0
-  const targetOffset = CIRCUMFERENCE * (1 - pct)
+  const RADIUS = 46;
+  const STROKE = 12;
+  const SIZE = 130;
+  const C = SIZE / 2;
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+  const pct = total > 0 ? (total - disponible) / total : 0;
+  const targetOffset = CIRCUMFERENCE * (1 - pct);
 
-  const [animatedOffset, setAnimatedOffset] = useState(CIRCUMFERENCE)
+  // Animate the arc from empty → target on mount and whenever pct changes
+  const [animatedOffset, setAnimatedOffset] = useStateD(CIRCUMFERENCE);
   useEffect(() => {
-    setAnimatedOffset(CIRCUMFERENCE)
-    const id = requestAnimationFrame(() => setAnimatedOffset(targetOffset))
-    return () => cancelAnimationFrame(id)
-  }, [targetOffset, CIRCUMFERENCE])
+    setAnimatedOffset(CIRCUMFERENCE);
+    const id = requestAnimationFrame(() => setAnimatedOffset(targetOffset));
+    return () => cancelAnimationFrame(id);
+  }, [targetOffset, CIRCUMFERENCE]);
 
   const arcColor = !isCompatible
     ? '#6b7280'
     : pct <= 0.30 ? '#00C46A'
     : pct <= 0.60 ? '#1A73E8'
     : pct <= 0.80 ? '#F97316'
-    : '#EF4444'
+    : '#EF4444';
 
-  const pctLabel = Math.round(pct * 100)
+  const pctLabel = Math.round(pct * 100);
 
   return (
     <div className="donut">
@@ -90,21 +74,56 @@ function DonutChart({ disponible, total, isCompatible }) {
         <span className="donut__label">USADO</span>
       </div>
     </div>
-  )
+  );
 }
 
-// ─── KueskiMark (wordmark on credit card) ────────────────────────────────────
 function KueskiMark({ size = 'md' }) {
   return (
     <div className={`cc-brand cc-brand--${size}`}>
       <span className="cc-brand__kueski">kueski</span>
       <span className="cc-brand__pay">pay</span>
     </div>
-  )
+  );
 }
 
-// ─── Credit Card components ───────────────────────────────────────────────────
+// ─── Brand Switcher (header logo as toggle) ─────────────────────────────────
+// Custom "kueski" wordmark where the dot of the "i" is yellow and the stem is green.
+function KueskiSplitMark() {
+  return (
+    <span className="brand-switch__kueski">
+      kuesk<span className="brand-switch__i" aria-hidden="true">ı</span>
+    </span>
+  );
+}
 
+function BrandSwitcher({ brand, onChange }) {
+  const next = brand === 'kueskipay' ? 'kueski' : 'kueskipay';
+  return (
+    <button
+      type="button"
+      className="brand-toggle"
+      data-brand={brand}
+      onClick={() => onChange(next)}
+      aria-label={`Cambiar a ${next === 'kueski' ? 'Kueski' : 'KueskiPay'}`}
+      title={`Cambiar a ${next === 'kueski' ? 'Kueski' : 'KueskiPay'}`}
+    >
+      <img
+        src="assets/kueskipay.png"
+        alt="KueskiPay"
+        className="brand-toggle__img brand-toggle__img--kueskipay"
+        draggable="false"
+      />
+      <img
+        src="assets/kueski.png"
+        alt="Kueski"
+        className="brand-toggle__img brand-toggle__img--kueski"
+        draggable="false"
+      />
+    </button>
+  );
+}
+
+// ─── Credit Card ─────────────────────────────────────────────────────────────
 function CardChip() {
   return (
     <svg className="cc-chip" width="34" height="26" viewBox="0 0 40 30" aria-hidden="true">
@@ -126,7 +145,7 @@ function CardChip() {
       </g>
       <rect x="14.5" y="10.5" width="11" height="9" rx="1" fill="rgba(0,0,0,0.16)" />
     </svg>
-  )
+  );
 }
 
 function ContactlessIcon() {
@@ -138,19 +157,18 @@ function ContactlessIcon() {
         <path d="M15 2 a 14 14 0 0 1 0 20" />
       </g>
     </svg>
-  )
+  );
 }
 
-// ─── Credit Card ─────────────────────────────────────────────────────────────
 function CreditCard({ usuario, isCompatible }) {
-  const [cardFlipped, setCardFlipped] = useState(false)
-  const [nipVisible, setNipVisible] = useState(false)
+  const [cardFlipped, setCardFlipped] = useStateD(false);
+  const [nipVisible, setNipVisible] = useStateD(false);
   const nip = usuario?.numero_tarjeta
     ? `${usuario.numero_tarjeta.slice(-2)}${usuario.numero_tarjeta.slice(0, 2)}`
-    : '4821'
+    : '4821';
 
-  const last4 = usuario?.numero_tarjeta ?? '••••'
-  const nombre = (usuario?.nombre ?? '').toUpperCase()
+  const last4 = usuario?.numero_tarjeta ?? '••••';
+  const nombre = (usuario?.nombre ?? '').toUpperCase();
 
   return (
     <div
@@ -225,7 +243,7 @@ function CreditCard({ usuario, isCompatible }) {
               </div>
               <div
                 className="credit-card__cvv-box"
-                onClick={(e) => { e.stopPropagation(); setNipVisible(v => !v) }}
+                onClick={(e) => { e.stopPropagation(); setNipVisible(v => !v); }}
                 title={nipVisible ? 'Ocultar CVV' : 'Mostrar CVV'}
               >
                 <span className="credit-card__col-lbl">CVV</span>
@@ -241,19 +259,22 @@ function CreditCard({ usuario, isCompatible }) {
 
       </div>
     </div>
-  )
+  );
 }
 
-// ─── Site Status Card ─────────────────────────────────────────────────────────
+// ─── Tab: Inicio ─────────────────────────────────────────────────────────────
 function SiteStatusCard({ isCompatible, currentSite, onVerTiendas }) {
+  // Mocked current site: when compatible, pretend the user is on a partner store;
+  // when not, use a generic third-party domain. In production the extension's
+  // content script would update this via the kueski:storechange event.
   const site = currentSite || (isCompatible
     ? { nombre: 'Amazon', url: 'amazon.com.mx', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Amazon_icon.svg/512px-Amazon_icon.svg.png' }
     : { nombre: 'Este sitio', url: 'ejemplo.com', logo: '' }
-  )
+  );
 
   const initials = (site.nombre || site.url || '?')
     .split(/[\s.]/).filter(Boolean).slice(0, 2)
-    .map(s => s[0]).join('').toUpperCase()
+    .map(s => s[0]).join('').toUpperCase();
 
   return (
     <div className={`site-status ${isCompatible ? 'site-status--ok' : 'site-status--off'}`}>
@@ -266,7 +287,7 @@ function SiteStatusCard({ isCompatible, currentSite, onVerTiendas }) {
           <img
             src={site.logo}
             alt=""
-            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }}
+            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
           />
         ) : null}
         <span className="site-status__initials" style={{ display: site.logo ? 'none' : 'flex' }}>{initials}</span>
@@ -291,23 +312,23 @@ function SiteStatusCard({ isCompatible, currentSite, onVerTiendas }) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-// ─── Tab: Inicio (KueskiPay) ──────────────────────────────────────────────────
 function TabInicio({ usuario, isCompatible, onVerTiendas }) {
-  const disponible = usuario?.credito_disponible ?? 0
-  const adeudo = usuario?.adeudo_proximo ?? 0
-  const lineaTotal = disponible + adeudo
-  const textoVencimiento = formatVencimiento(usuario?.fecha_vencimiento)
+  const disponible = usuario?.credito_disponible ?? 0;
+  const adeudo = usuario?.adeudo_proximo ?? 0;
+  const lineaTotal = disponible + adeudo;
+  const textoVencimiento = formatVencimiento(usuario?.fecha_vencimiento);
 
-  const pct = lineaTotal > 0 ? adeudo / lineaTotal : 0
+  // Utilization tier metadata (matches DonutChart arc color logic)
+  const pct = lineaTotal > 0 ? adeudo / lineaTotal : 0;
   const tier = !isCompatible
     ? { label: 'Sin disponibilidad', color: '#6b7280', bg: '#f3f4f6' }
     : pct <= 0.30 ? { label: 'Saludable',    color: '#00C46A', bg: '#E7F8EF' }
     : pct <= 0.60 ? { label: 'Moderado',     color: '#1A73E8', bg: '#EAF2FE' }
     : pct <= 0.80 ? { label: 'Alto uso',     color: '#F97316', bg: '#FFF3E6' }
-    :               { label: 'Crítico',      color: '#EF4444', bg: '#FEE9E9' }
+    :               { label: 'Crítico',      color: '#EF4444', bg: '#FEE9E9' };
 
   return (
     <div className="inicio">
@@ -322,7 +343,10 @@ function TabInicio({ usuario, isCompatible, onVerTiendas }) {
             <span className="credit-summary__sep" aria-hidden="true">·</span>
             <span className="credit-summary__used">${adeudo.toLocaleString('es-MX')} usado</span>
           </div>
-          <span className="credit-summary__tier" style={{ color: tier.color, background: tier.bg }}>
+          <span
+            className="credit-summary__tier"
+            style={{ color: tier.color, background: tier.bg }}
+          >
             <span className="credit-summary__tier-dot" style={{ background: tier.color }} />
             {tier.label}
           </span>
@@ -361,7 +385,7 @@ function TabInicio({ usuario, isCompatible, onVerTiendas }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Tab: Inicio (Kueski – préstamos personales) ─────────────────────────────
@@ -391,12 +415,12 @@ function TabInicioKueski({ usuario }) {
         <span className="inicio-k__placeholder-tag">Próximamente</span>
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Tab: Calculadora ─────────────────────────────────────────────────────────
 function getRecomendacion(quincenas, score, monto) {
-  const cuota = (monto * (1 + 0.03 * quincenas)) / quincenas
+  const cuota = (monto * (1 + 0.03 * quincenas)) / quincenas;
 
   if (score >= 750) {
     return {
@@ -406,60 +430,60 @@ function getRecomendacion(quincenas, score, monto) {
       8: `Aunque puedes pagarlo, con tu score es mejor en menos quincenas para ahorrar intereses.`,
       10: `Cuotas muy cómodas de $${cuota.toFixed(0)} MXN. Considera que pagarás más intereses en total.`,
       12: `Máximo plazo disponible. Cuotas de $${cuota.toFixed(0)} MXN. Solo recomendado para montos grandes.`
-    }[quincenas]
+    }[quincenas];
   } else if (score >= 650) {
     return {
       2: `Cuotas altas de $${cuota.toFixed(0)} MXN. Asegúrate de tener liquidez suficiente.`,
       4: `Mejor opción para tu score actual. Pagar a tiempo mejorará tu historial.`,
       6: `Cuotas cómodas de $${cuota.toFixed(0)} MXN. Cada pago puntual suma puntos a tu score.`,
       8: `Bloqueado — mejora tu score a 750+ para acceder a 8 quincenas.`,
-    }[quincenas]
+    }[quincenas];
   } else if (score >= 550) {
     return {
       2: `Cuotas elevadas. Solo elige 2 quincenas si tienes el dinero asegurado.`,
       4: `Recomendado para tu score. Pagar puntual puede subir tu score hasta 30 puntos.`,
       6: `Cuotas de $${cuota.toFixed(0)} MXN. No uses más del 60% de tu crédito disponible.`,
       8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
-    }[quincenas]
+    }[quincenas];
   } else {
     return {
       2: `Tu score es bajo. Pagar estas 2 quincenas a tiempo puede recuperar hasta 50 puntos.`,
       4: `Opción más segura con tu score actual. Activa recordatorios de pago.`,
       6: `No recomendado — con score bajo, más quincenas aumentan el riesgo de mora.`,
       8: `Bloqueado — necesitas score 750+ para 8 quincenas.`,
-    }[quincenas]
+    }[quincenas];
   }
 }
 
 function TabCalculadora({ usuario }) {
-  const RATE = 0.03
-  const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const score = usuario?.score_crediticio ?? 0
+  const RATE = 0.03;
+  const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const score = usuario?.score_crediticio ?? 0;
 
   const getQuincenasDisponibles = (s) => {
-    if (s >= 750) return [2, 4, 6, 8, 10, 12]
-    if (s >= 650) return [2, 4, 6, 8]
-    if (s >= 550) return [2, 4, 6]
-    return [2, 4]
-  }
+    if (s >= 750) return [2, 4, 6, 8, 10, 12];
+    if (s >= 650) return [2, 4, 6, 8];
+    if (s >= 550) return [2, 4, 6];
+    return [2, 4];
+  };
 
-  const quincenasOpciones = getQuincenasDisponibles(score)
+  const quincenasOpciones = getQuincenasDisponibles(score);
 
-  const [monto, setMonto] = useState(513)
-  const [rawInput, setRawInput] = useState('513')
-  const [quincenas, setQuincenas] = useState(4)
-  const [recordatorio, setRecordatorio] = useState(true)
-  const [tipoRecordatorio, setTipoRecordatorio] = useState('Ocasional')
+  const [monto, setMonto] = useStateD(513);
+  const [rawInput, setRawInput] = useStateD('513');
+  const [quincenas, setQuincenas] = useStateD(4);
+  const [recordatorio, setRecordatorio] = useStateD(true);
+  const [tipoRecordatorio, setTipoRecordatorio] = useStateD('Ocasional');
 
-  const total = monto * (1 + RATE * quincenas)
-  const intereses = total - monto
-  const cuota = total / quincenas
+  const total = monto * (1 + RATE * quincenas);
+  const intereses = total - monto;
+  const cuota = total / quincenas;
 
   const handleMontoChange = (e) => {
-    const raw = e.target.value.replace(/[^0-9]/g, '')
-    setRawInput(raw)
-    setMonto(Number(raw) || 0)
-  }
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setRawInput(raw);
+    setMonto(Number(raw) || 0);
+  };
 
   return (
     <div className="calc">
@@ -487,7 +511,7 @@ function TabCalculadora({ usuario }) {
             <div className="calc__dots-row">
               <div className="calc__line-bar" />
               {quincenasOpciones.map((q) => {
-                const active = quincenas === q
+                const active = quincenas === q;
                 return (
                   <div key={q} className="calc__dot-col">
                     <span className={`calc__q-number ${active ? 'calc__q-number--active' : ''}`}>
@@ -498,7 +522,7 @@ function TabCalculadora({ usuario }) {
                       onClick={() => setQuincenas(q)}
                     />
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -572,62 +596,56 @@ function TabCalculadora({ usuario }) {
         <button className="calc__cta">Continuar</button>
       </div>
     </div>
-  )
+  );
 }
 
 // ─── Tab: Buscar ─────────────────────────────────────────────────────────────
 function TabBuscar({ tiendas, busquedaInicial = '' }) {
-  const [busqueda, setBusqueda] = useState(busquedaInicial)
-  const [resultados, setResultados] = useState([])
-  const [buscando, setBuscando] = useState(false)
-  const topRef = useRef(null)
+  const [busqueda, setBusqueda] = useStateD(busquedaInicial);
+  const [resultados, setResultados] = useStateD([]);
+  const [buscando, setBuscando] = useStateD(false);
 
   useEffect(() => {
-    topRef.current?.scrollIntoView({ behavior: 'instant' })
-  }, [])
-
-  useEffect(() => {
-    if (busquedaInicial) setBusqueda(busquedaInicial)
-  }, [busquedaInicial])
+    if (busquedaInicial) setBusqueda(busquedaInicial);
+  }, [busquedaInicial]);
 
   useEffect(() => {
     if (!busqueda.trim()) {
-      setResultados([])
-      return
+      setResultados([]);
+      return;
     }
     const timer = setTimeout(async () => {
-      setBuscando(true)
-      const { data } = await supabase
+      setBuscando(true);
+      const { data } = await supabaseD
         .from('productos')
         .select('*, tiendas_afiliadas(nombre, logo, url)')
-        .ilike('nombre', `%${busqueda}%`)
-      setResultados(data ?? [])
-      setBuscando(false)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [busqueda])
+        .ilike('nombre', `%${busqueda}%`);
+      setResultados(data ?? []);
+      setBuscando(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [busqueda]);
 
   const productosAgrupados = useMemo(() => {
-    const grupos = {}
+    const grupos = {};
     resultados.forEach(p => {
-      if (!grupos[p.nombre]) grupos[p.nombre] = []
-      grupos[p.nombre].push(p)
-    })
-    Object.values(grupos).forEach(arr => arr.sort((a, b) => a.precio - b.precio))
-    return grupos
-  }, [resultados])
+      if (!grupos[p.nombre]) grupos[p.nombre] = [];
+      grupos[p.nombre].push(p);
+    });
+    Object.values(grupos).forEach(arr => arr.sort((a, b) => a.precio - b.precio));
+    return grupos;
+  }, [resultados]);
 
   const getIniciales = (nombre = '') => {
-    const palabras = nombre.trim().split(' ')
-    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase()
-    return (palabras[0][0] + palabras[1][0]).toUpperCase()
-  }
+    const palabras = nombre.trim().split(' ');
+    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase();
+    return (palabras[0][0] + palabras[1][0]).toUpperCase();
+  };
 
-  const hayBusqueda = busqueda.trim().length > 0
+  const hayBusqueda = busqueda.trim().length > 0;
 
   return (
     <div className="buscar">
-      <div ref={topRef} />
       <div className="buscar__input-wrapper">
         <span className="buscar__icon"><IconSearch /></span>
         <input
@@ -652,8 +670,8 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
                       alt={tienda.nombre}
                       className="tienda-card__logo"
                       onError={(e) => {
-                        e.target.style.display = 'none'
-                        e.target.nextSibling.style.display = 'flex'
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
                       }}
                     />
                   ) : null}
@@ -678,15 +696,15 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
               <span className="comparador-card__titulo">{nombre}</span>
               <div className="comparador-card__lista">
                 {filas.map((producto, i) => {
-                  const esMejor = i === 0
-                  const tienda = producto.tiendas_afiliadas
+                  const esMejor = i === 0;
+                  const tienda = producto.tiendas_afiliadas;
                   return (
                     <div
                       key={producto.id_producto}
                       className={`comparador-fila ${esMejor ? 'comparador-fila--mejor' : ''}`}
                       onClick={() => {
-                        const url = producto.url_producto || (tienda?.url ? `https://${tienda.url}` : null)
-                        if (url) window.open(url, '_blank')
+                        const url = producto.url_producto || (tienda?.url ? `https://${tienda.url}` : null);
+                        if (url) window.open(url, '_blank');
                       }}
                     >
                       <div className="comparador-fila__left">
@@ -697,8 +715,8 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
                               alt={tienda.nombre}
                               className="comparador-fila__logo"
                               onError={(e) => {
-                                e.target.style.display = 'none'
-                                e.target.nextSibling.style.display = 'flex'
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
                               }}
                             />
                           ) : null}
@@ -718,7 +736,7 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
                         <span className="comparador-fila__arrow">→</span>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -731,55 +749,56 @@ function TabBuscar({ tiendas, busquedaInicial = '' }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Tab: Historial ──────────────────────────────────────────────────────────
 function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario }) {
-  const score = historialCrediticio?.score_actual ?? 0
-  const pagosTiempo = historialCrediticio?.pagos_a_tiempo ?? 0
-  const pagosTardios = historialCrediticio?.pagos_tardios ?? 0
-  const lineaTotal = (usuario?.credito_disponible ?? 0) + (usuario?.adeudo_proximo ?? 0)
+  const score = historialCrediticio?.score_actual ?? 0;
+  const pagosTiempo = historialCrediticio?.pagos_a_tiempo ?? 0;
+  const pagosTardios = historialCrediticio?.pagos_tardios ?? 0;
+  const lineaTotal = (usuario?.credito_disponible ?? 0) + (usuario?.adeudo_proximo ?? 0);
   const porcentajeUso = lineaTotal > 0
     ? Math.round((usuario.adeudo_proximo / lineaTotal) * 100)
-    : 0
+    : 0;
 
   const getScoreInfo = (s) => {
-    if (s >= 750) return { label: 'Excelente', color: '#16a34a' }
-    if (s >= 650) return { label: 'Bueno',     color: '#1a73e8' }
-    if (s >= 550) return { label: 'Regular',   color: '#d97706' }
-    return         { label: 'Bajo',            color: '#ef4444' }
-  }
+    if (s >= 750) return { label: 'Excelente', color: '#16a34a' };
+    if (s >= 650) return { label: 'Bueno',     color: '#1a73e8' };
+    if (s >= 550) return { label: 'Regular',   color: '#d97706' };
+    return         { label: 'Bajo',            color: '#ef4444' };
+  };
 
   const getTip = (s) => {
-    if (s >= 750) return 'Excelente historial. Eres candidato para aumentar tu línea de crédito.'
-    if (s >= 650) return 'Buen ritmo. Paga a tiempo este mes para subir tu score.'
-    if (s >= 550) return 'Evita usar más del 50% de tu crédito para mejorar tu score.'
-    return 'Tienes pagos tardíos. Ponerte al corriente mejora tu score rápido.'
-  }
+    if (s >= 750) return 'Excelente historial. Eres candidato para aumentar tu línea de crédito.';
+    if (s >= 650) return 'Buen ritmo. Paga a tiempo este mes para subir tu score.';
+    if (s >= 550) return 'Evita usar más del 50% de tu crédito para mejorar tu score.';
+    return 'Tienes pagos tardíos. Ponerte al corriente mejora tu score rápido.';
+  };
 
-  const { label: scoreLabel, color: scoreColor } = getScoreInfo(score)
-  const tip = getTip(score)
-  const scorePct = Math.min(score / 850, 1)
+  const { label: scoreLabel, color: scoreColor } = getScoreInfo(score);
+  const tip = getTip(score);
+  const scorePct = Math.min(score / 850, 1);
 
   const formatFecha = (fechaStr) => {
-    if (!fechaStr) return ''
-    const d = new Date(fechaStr)
-    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
-  }
+    if (!fechaStr) return '';
+    const d = new Date(fechaStr);
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   const getIniciales = (nombre = '') => {
-    const palabras = nombre.trim().split(' ')
-    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase()
-    return (palabras[0][0] + (palabras[1]?.[0] ?? '')).toUpperCase()
-  }
+    const palabras = nombre.trim().split(' ');
+    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase();
+    return (palabras[0][0] + (palabras[1]?.[0] ?? '')).toUpperCase();
+  };
 
-  const GAUGE_W = 132
-  const GAUGE_H = 72
-  const GAUGE_CX = GAUGE_W / 2
-  const GAUGE_CY = GAUGE_H - 4
-  const GAUGE_R = 58
-  const arcLen = Math.PI * GAUGE_R
+  // SVG gauge geometry (semi-circle arc)
+  const GAUGE_W = 132;
+  const GAUGE_H = 72;
+  const GAUGE_CX = GAUGE_W / 2;
+  const GAUGE_CY = GAUGE_H - 4;
+  const GAUGE_R = 58;
+  const arcLen = Math.PI * GAUGE_R;
 
   return (
     <div className="historial">
@@ -862,7 +881,7 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
         {historialCompras.length > 0 ? (
           <ul className="hist-list">
             {historialCompras.map((compra, i) => {
-              const tienda = tiendas.find(t => t.id_tienda === compra.id_tienda)
+              const tienda = tiendas.find(t => t.id_tienda === compra.id_tienda);
               return (
                 <li key={compra.id ?? i} className="hist-row">
                   <div className="hist-row__logo">
@@ -872,8 +891,8 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
                         alt=""
                         className="hist-row__logo-img"
                         onError={(e) => {
-                          e.target.style.display = 'none'
-                          e.target.nextSibling.style.display = 'flex'
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
                         }}
                       />
                     ) : null}
@@ -894,7 +913,7 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
                     <span className="hist-row__status" title="Pagado" />
                   </div>
                 </li>
-              )
+              );
             })}
           </ul>
         ) : (
@@ -902,48 +921,66 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
         )}
       </section>
     </div>
-  )
+  );
 }
 
-// ─── Notifications Dropdown ──────────────────────────────────────────────────
+// ─── Notifications & Settings Dropdowns ─────────────────────────────────────
 function NotificationsDropdown({ onClose }) {
-  const ref = useRef()
-
+  const ref = useRef();
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose()
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [onClose])
-
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
   return (
     <div className="notif-dropdown" ref={ref}>
       <p className="notif-empty">No hay notificaciones</p>
     </div>
-  )
+  );
 }
 
-// ─── Settings Panel ───────────────────────────────────────────────────────────
-function SettingsDropdown({ usuario, onLogout, onClose }) {
-  const ref = useRef()
-  const bodyRef = useRef()
-  const [view, setView] = useState('menu')
-  const [pushNotifs, setPushNotifs] = useState(true)
-  const [emailNotifs, setEmailNotifs] = useState(false)
-  const [faqOpen, setFaqOpen] = useState(null)
+// ─── Icons (extra, for settings + support) ──────────────────────────
+const IconChevron = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>;
+const IconBack = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>;
+const IconClose = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>;
+const IconUser = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
+const IconCard = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>;
+const IconShield = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+const IconBellSm = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>;
+const IconGlobe = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" /></svg>;
+const IconHelp = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+const IconChat = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>;
+const IconWhatsapp = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
+const IconPhone = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>;
+const IconMail = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>;
+const IconAlert = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+const IconLogout = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>;
+const IconCheck = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>;
 
-  useEffect(() => { bodyRef.current?.scrollTo(0, 0) }, [view])
+function SettingsDropdown({ usuario, onLogout, onClose }) {
+  const ref = useRef();
+  const [view, setView] = useStateD('menu'); // 'menu' | 'soporte'
+  const [pushNotifs, setPushNotifs] = useStateD(true);
+  const [emailNotifs, setEmailNotifs] = useStateD(false);
+  const [faqOpen, setFaqOpen] = useStateD(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    onLogout()
-  }
+    await supabaseD.auth.signOut();
+    onLogout();
+  };
 
-  const nombre = usuario?.nombre || 'Usuario'
-  const correo = usuario?.correo || ''
-  const iniciales = nombre.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'KP'
+  // Derived user data
+  const nombre = usuario?.nombre || 'Usuario';
+  const correo = usuario?.correo || '';
+  const iniciales = nombre.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'KP';
 
+  // ── Soporte (Customer Service) sub-view ────────────────────────────
   const faqs = [
     { q: '¿Cómo pago mi próxima cuota?',
       a: 'El cobro es automático en la tarjeta o cuenta que registraste. También puedes adelantar el pago desde Historial → "Pagar ahora".' },
@@ -953,7 +990,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
       a: 'Se aplica un cargo por pago tardío y afecta tu score interno. Te recomendamos activar recordatorios de pago.' },
     { q: '¿Cómo aumento mi línea de crédito?',
       a: 'Paga a tiempo durante 3 meses seguidos y mantén tu utilización por debajo del 60%. La línea se ajusta automáticamente.' },
-  ]
+  ];
 
   if (view === 'soporte') {
     return (
@@ -968,7 +1005,8 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           </button>
         </header>
 
-        <div className="settings-panel__body" ref={bodyRef}>
+        <div className="settings-panel__body">
+          {/* Hero contact card */}
           <section className="support-hero">
             <div className="support-hero__pulse" aria-hidden="true">
               <span className="support-hero__pulse-dot" />
@@ -983,6 +1021,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
             </button>
           </section>
 
+          {/* Contact channels */}
           <section className="settings-section">
             <span className="hist-eyebrow">Otros canales</span>
             <div className="support-channels">
@@ -1013,6 +1052,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
             </div>
           </section>
 
+          {/* FAQ */}
           <section className="settings-section">
             <span className="hist-eyebrow">Preguntas frecuentes</span>
             <div className="faq-list">
@@ -1028,6 +1068,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
             </div>
           </section>
 
+          {/* Report a problem */}
           <button className="support-report">
             <span className="support-report__icon"><IconAlert /></span>
             <span className="support-report__body">
@@ -1038,9 +1079,10 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
+  // ── Main settings menu ─────────────────────────────────────────────
   return (
     <div className="settings-panel" ref={ref} data-view="menu">
       <header className="settings-panel__header">
@@ -1050,7 +1092,8 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
         </button>
       </header>
 
-      <div className="settings-panel__body" ref={bodyRef}>
+      <div className="settings-panel__body">
+        {/* Profile card */}
         <section className="settings-profile">
           <div className="settings-profile__avatar">
             <span>{iniciales}</span>
@@ -1065,6 +1108,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           </div>
         </section>
 
+        {/* Cuenta */}
         <section className="settings-section">
           <span className="hist-eyebrow">Cuenta</span>
           <ul className="settings-list">
@@ -1087,6 +1131,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           </ul>
         </section>
 
+        {/* Preferencias */}
         <section className="settings-section">
           <span className="hist-eyebrow">Preferencias</span>
           <ul className="settings-list">
@@ -1121,6 +1166,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           </ul>
         </section>
 
+        {/* Soporte */}
         <section className="settings-section">
           <span className="hist-eyebrow">Soporte</span>
           <ul className="settings-list">
@@ -1133,6 +1179,7 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
           <p className="settings-section__hint">Chat, llamada, WhatsApp y preguntas frecuentes</p>
         </section>
 
+        {/* Logout */}
         <button className="settings-logout" onClick={handleLogout}>
           <IconLogout />
           <span>Cerrar sesión</span>
@@ -1141,108 +1188,66 @@ function SettingsDropdown({ usuario, onLogout, onClose }) {
         <p className="settings-footer">KueskiPay · v2.4.1</p>
       </div>
     </div>
-  )
+  );
 }
 
-// ─── Brand Switcher ───────────────────────────────────────────────────────────
-function BrandSwitcher({ brand, onChange }) {
-  const next = brand === 'kueskipay' ? 'kueski' : 'kueskipay'
-  return (
-    <button
-      type="button"
-      className="brand-toggle"
-      data-brand={brand}
-      onClick={() => onChange(next)}
-      aria-label={`Cambiar a ${next === 'kueski' ? 'Kueski' : 'KueskiPay'}`}
-    >
-      <img src="kueskipay.png" alt="KueskiPay" className="brand-toggle__img brand-toggle__img--kueskipay" draggable="false" />
-      <img src="kueski.png"    alt="Kueski"    className="brand-toggle__img brand-toggle__img--kueski"    draggable="false" />
-    </button>
-  )
-}
-
-// ─── Dashboard Principal ──────────────────────────────────────────────────────
+// ─── Dashboard Principal ────────────────────────────────────────────────────
 const NAV_TABS = [
   { id: 'inicio',      Icon: IconHome,   label: 'INICIO' },
   { id: 'calculadora', Icon: IconCalc,   label: 'CALCULADORA' },
   { id: 'buscar',      Icon: IconSearch, label: 'BUSCAR' },
   { id: 'historial',   Icon: IconChart,  label: 'HISTORIAL' },
-]
+];
 
 function Dashboard({ usuario, onLogout }) {
-  const [tab, setTab] = useState('inicio')
-  const [brand, setBrand] = useState('kueskipay')
-  const [showSettings, setShowSettings] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [tiendas, setTiendas] = useState([])
-  const [historialCrediticio, setHistorialCrediticio] = useState(null)
-  const [historialCompras, setHistorialCompras] = useState([])
-  const [tiendaCompatible, setTiendaCompatible] = useState(false)
+  const [tab, setTab] = useStateD('inicio');
+  const [brand, setBrand] = useStateD('kueskipay');
+  const [showSettings, setShowSettings] = useStateD(false);
+  const [showNotifications, setShowNotifications] = useStateD(false);
+  const [tiendas, setTiendas] = useStateD([]);
+  const [historialCrediticio, setHistorialCrediticio] = useStateD(null);
+  const [historialCompras, setHistorialCompras] = useStateD([]);
+  const [tiendaCompatible, setTiendaCompatible] = useStateD(
+    window.__kueski_force_compatible !== false
+  );
 
-  // Determine store compatibility from the active browser tab
   useEffect(() => {
-    if (typeof chrome === 'undefined' || !chrome.tabs) return
-
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (!tabs[0]?.url) return
-      if (
-        tabs[0].url.startsWith('chrome://') ||
-        tabs[0].url.startsWith('chrome-extension://')
-      ) {
-        setTiendaCompatible(false)
-        return
-      }
-
-      try {
-        const hostname = new URL(tabs[0].url).hostname
-
-        if (hostname.includes('amazon.com.mx') || hostname.includes('mercadolibre.com.mx')) {
-          setTiendaCompatible(true)
-          return
-        }
-
-        const { data } = await supabase
-          .from('tiendas_afiliadas')
-          .select('*')
-          .ilike('url', `%${hostname}%`)
-
-        setTiendaCompatible(data && data.length > 0)
-      } catch {
-        setTiendaCompatible(false)
-      }
-    })
-  }, [])
+    const update = () => setTiendaCompatible(window.__kueski_force_compatible !== false);
+    update();
+    window.addEventListener('kueski:storechange', update);
+    return () => window.removeEventListener('kueski:storechange', update);
+  }, []);
 
   useEffect(() => {
     const descargarDatos = async () => {
-      const { data: tiendasData } = await supabase.from('tiendas_afiliadas').select('*')
-      if (tiendasData) setTiendas(tiendasData)
+      const { data: tiendasData } = await supabaseD.from('tiendas_afiliadas').select('*');
+      if (tiendasData) setTiendas(tiendasData);
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: { user } } = await supabaseD.auth.getUser();
+      if (!user) return;
 
-      const { data: hc } = await supabase
+      const { data: hc } = await supabaseD
         .from('historial_crediticio')
         .select('*')
         .eq('id_usuario', user.id)
-        .single()
-      if (hc) setHistorialCrediticio(hc)
+        .single();
+      if (hc) setHistorialCrediticio(hc);
 
-      const { data: compras } = await supabase
+      const { data: compras } = await supabaseD
         .from('historial_compras')
         .select('*')
         .eq('id_usuario', user.id)
-        .order('fecha', { ascending: false })
-      if (compras) setHistorialCompras(compras)
-    }
-    descargarDatos()
-  }, [])
+        .order('fecha', { ascending: false });
+      if (compras) setHistorialCompras(compras);
+    };
+    descargarDatos();
+  }, []);
 
   return (
     <div className="dashboard" data-brand={brand}>
       <header className="dashboard__header">
         <div className="dashboard__brand">
-          <img src="kueskilogo.png" alt="Kueski" className="dashboard__plant-logo" />
+          <img src="assets/kueski-plant-logo.png" alt="Kueski" className="dashboard__plant-logo" />
           <BrandSwitcher brand={brand} onChange={setBrand} />
         </div>
         <div className="dashboard__header-icons" style={{ position: 'relative' }}>
@@ -1250,7 +1255,7 @@ function Dashboard({ usuario, onLogout }) {
             <button
               className="icon-btn"
               aria-label="Notificaciones"
-              onClick={() => { setShowNotifications((v) => !v); setShowSettings(false) }}
+              onClick={() => { setShowNotifications((v) => !v); setShowSettings(false); }}
             >
               <IconBell />
             </button>
@@ -1258,7 +1263,7 @@ function Dashboard({ usuario, onLogout }) {
           <button
             className="icon-btn"
             aria-label="Configuración"
-            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false) }}
+            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false); }}
           >
             <IconSettings />
           </button>
@@ -1277,11 +1282,11 @@ function Dashboard({ usuario, onLogout }) {
       )}
 
       <main className="dashboard__content">
-        {tab === 'inicio' && brand === 'kueski'     && <TabInicioKueski usuario={usuario} />}
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
+        {tab === 'inicio' && brand === 'kueski' && <TabInicioKueski usuario={usuario} />}
+        {tab === 'inicio' && brand === 'kueskipay' && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
-        {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}
-        {tab === 'historial'   && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}
+        {tab === 'buscar' && <TabBuscar tiendas={tiendas} />}
+        {tab === 'historial' && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}
       </main>
 
       <nav className="dashboard__nav">
@@ -1297,7 +1302,7 @@ function Dashboard({ usuario, onLogout }) {
         ))}
       </nav>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+window.Dashboard = Dashboard;
