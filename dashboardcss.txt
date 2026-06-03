@@ -2559,3 +2559,420 @@
   padding: 4px 10px;
   border-radius: 999px;
 }
+
+/* ─── Payments Calendar ──────────────────────────────────────────────────── */
+
+/* Next-payment hero */
+.paycal-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  color: #fff;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 72%, #000) 100%);
+}
+
+.paycal-hero--proximo {
+  background: linear-gradient(135deg, #F97316 0%, #ea580c 100%);
+}
+
+.paycal-hero--vencido {
+  background: linear-gradient(135deg, #EF4444 0%, #b91c1c 100%);
+}
+
+.paycal-hero::after {
+  content: "";
+  position: absolute;
+  top: -45px;
+  right: -45px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.paycal-hero__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 1;
+}
+
+.paycal-hero__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  opacity: 0.92;
+}
+
+.paycal-hero__date {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.paycal-hero__amount {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  z-index: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.paycal-hero__mxn {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.paycal-hero__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+  margin-top: 2px;
+}
+
+.paycal-hero__concept {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.paycal-hero__store {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.paycal-hero__cuota {
+  font-size: 10.5px;
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paycal-hero__cta {
+  z-index: 1;
+  margin-top: 6px;
+  width: 100%;
+  background: #fff;
+  color: #1a1a2e;
+  border: 0;
+  border-radius: 11px;
+  padding: 11px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.paycal-hero__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.paycal-hero__row .paycal-item__logo {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Calendar grid */
+.paycal-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.paycal-cal__month {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.01em;
+}
+
+.paycal-cal__nav {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #eef1f5;
+  background: #fff;
+  border-radius: 8px;
+  color: #4b5563;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.paycal-cal__nav:hover {
+  background: var(--brand-color-soft);
+  border-color: var(--brand-color);
+  color: var(--brand-color);
+}
+
+.paycal-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.paycal-cal__grid--dow {
+  margin-bottom: 4px;
+}
+
+.paycal-cal__dow {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  padding: 2px 0;
+}
+
+.paycal-cal__cell {
+  position: relative;
+  aspect-ratio: 1;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: background 0.14s, box-shadow 0.14s;
+}
+
+.paycal-cal__cell--empty {
+  cursor: default;
+}
+
+.paycal-cal__num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1;
+}
+
+.paycal-cal__cell--has { background: #f7f8fa; }
+.paycal-cal__cell--has:hover { background: #eef1f5; }
+
+.paycal-cal__cell--today .paycal-cal__num {
+  color: var(--brand-color);
+  font-weight: 800;
+}
+
+.paycal-cal__cell--today::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+  border: 1.5px solid color-mix(in srgb, var(--brand-color) 45%, transparent);
+}
+
+.paycal-cal__cell--selected {
+  background: var(--cell-accent, var(--brand-color));
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--cell-accent, var(--brand-color)) 35%, transparent);
+}
+
+.paycal-cal__cell--selected .paycal-cal__num {
+  color: #fff;
+  font-weight: 800;
+}
+
+.paycal-cal__cell--selected.paycal-cal__cell--today::before {
+  display: none;
+}
+
+.paycal-cal__dots {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  align-items: center;
+}
+
+.paycal-cal__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+.paycal-cal__cell--selected .paycal-cal__dot {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.paycal-cal__total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 11px 14px;
+  background: #fafbfc;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.paycal-cal__total strong {
+  font-size: 14px;
+  color: #1a1a2e;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Payment list items */
+.paycal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.paycal-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  background: #fafbfc;
+  border: 1px solid #eef1f5;
+  border-radius: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.paycal-item:hover {
+  background: #f3f5f8;
+}
+
+.paycal-item--active {
+  border-color: var(--brand-color);
+  background: var(--brand-color-soft);
+}
+
+.paycal-item--selected {
+  cursor: default;
+}
+
+.paycal-item__date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  flex-shrink: 0;
+}
+
+.paycal-item__date-day {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.paycal-item__date-mon {
+  font-size: 9px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+}
+
+.paycal-item__logo {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.paycal-item__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 5px;
+}
+
+.paycal-item__initials {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.paycal-item__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.paycal-item__store {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paycal-item__cuota {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paycal-item__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.paycal-item__amount {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a2e;
+  font-variant-numeric: tabular-nums;
+}
+
+.paycal-item__pill {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
