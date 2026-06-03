@@ -95,11 +95,11 @@ function DonutChart({ disponible, total, isCompatible }) {
 }
 
 // ─── KueskiMark (wordmark on credit card) ────────────────────────────────────
-function KueskiMark({ size = 'md' }) {
+function KueskiMark({ size = 'md', pay = false }) {
   return (
     <div className={`cc-brand cc-brand--${size}`}>
       <span className="cc-brand__kueski">kueski</span>
-      <span className="cc-brand__pay">pay</span>
+      {pay && <span className="cc-brand__pay">pay</span>}
     </div>
   )
 }
@@ -142,105 +142,205 @@ function ContactlessIcon() {
   )
 }
 
+// ─── Dynamic NIP (rotating 3-digit token) ────────────────────────────────────
+function useDynamicNip(period = 30, active = true) {
+  const gen = () => String(Math.floor(100 + Math.random() * 900))
+  const [nip, setNip] = useState(gen)
+  const [remaining, setRemaining] = useState(period)
+  useEffect(() => {
+    if (!active) return
+    const id = setInterval(() => {
+      setRemaining(r => {
+        if (r <= 1) { setNip(gen()); return period }
+        return r - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [period, active])
+  return { nip, remaining, period }
+}
+
+const IconCopySm  = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+const IconCheckSm = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+const IconCalSm   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+
+function CardActions({ pan, last4, vigencia, nip, remaining, period, onActivate }) {
+  const [copied, setCopied] = useState(null)
+  const [toast, setToast] = useState(null)
+  const [nipRevealed, setNipRevealed] = useState(false)
+
+  const copy = (key, value, label) => {
+    try {
+      if (navigator.clipboard) navigator.clipboard.writeText(value)
+    } catch (e) { /* clipboard blocked in sandbox */ }
+    setCopied(key)
+    setToast(label)
+    setTimeout(() => setCopied(c => (c === key ? null : c)), 1200)
+    setTimeout(() => setToast(t => (t === label ? null : t)), 1700)
+  }
+
+  const revealNip = () => {
+    setNipRevealed(true)
+    onActivate && onActivate()
+    setTimeout(() => setNipRevealed(false), 5000)
+    copy('nip', nip, 'NIP copiado')
+  }
+
+  const R = 9
+  const CIRC = 2 * Math.PI * R
+  const offset = CIRC * (1 - remaining / period)
+
+  return (
+    <div className="card-actions">
+      <div className={`copy-toast ${toast ? 'copy-toast--show' : ''}`} role="status" aria-live="polite">
+        <IconCheckSm />
+        <span>{toast}</span>
+      </div>
+
+      <button type="button" className={`card-action ${copied === 'num' ? 'card-action--done' : ''}`} onClick={() => copy('num', pan, 'Número copiado')}>
+        <span className="card-action__icon">{copied === 'num' ? <IconCheckSm /> : <IconCopySm />}</span>
+        <span className="card-action__body">
+          <span className="card-action__label">Número</span>
+          <span className="card-action__value">{`••• ${last4}`}</span>
+        </span>
+      </button>
+
+      <button type="button" className={`card-action card-action--nip ${copied === 'nip' ? 'card-action--done' : ''}`} onClick={revealNip}>
+        <span className="card-action__ring" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r={R} fill="none" stroke="rgba(0,0,0,0.10)" strokeWidth="2.5" />
+            <circle
+              cx="12" cy="12" r={R} fill="none"
+              stroke="var(--brand-color)" strokeWidth="2.5" strokeLinecap="round"
+              strokeDasharray={CIRC} strokeDashoffset={offset}
+              transform="rotate(-90 12 12)"
+              style={{ transition: 'stroke-dashoffset 1s linear' }}
+            />
+          </svg>
+        </span>
+        <span className="card-action__body">
+          <span className="card-action__label">NIP</span>
+          <span className="card-action__value card-action__value--nip">{nipRevealed ? nip : '•••'}</span>
+        </span>
+      </button>
+
+      <button type="button" className={`card-action ${copied === 'exp' ? 'card-action--done' : ''}`} onClick={() => copy('exp', vigencia, 'Vigencia copiada')}>
+        <span className="card-action__icon">{copied === 'exp' ? <IconCheckSm /> : <IconCalSm />}</span>
+        <span className="card-action__body">
+          <span className="card-action__label">Vigencia</span>
+          <span className="card-action__value">{vigencia}</span>
+        </span>
+      </button>
+    </div>
+  )
+}
+
 // ─── Credit Card ─────────────────────────────────────────────────────────────
 function CreditCard({ usuario, isCompatible }) {
   const [cardFlipped, setCardFlipped] = useState(false)
   const [nipVisible, setNipVisible] = useState(false)
-  const nip = usuario?.numero_tarjeta
-    ? `${usuario.numero_tarjeta.slice(-2)}${usuario.numero_tarjeta.slice(0, 2)}`
-    : '4821'
+  const [nipActive, setNipActive] = useState(false)
+  const { nip, remaining, period } = useDynamicNip(30, nipActive)
 
-  const last4 = usuario?.numero_tarjeta ?? '••••'
+  const last4 = usuario?.numero_tarjeta ?? '4821'
+  const pan = `4815 6291 0473 ${last4}`
+  const vigencia = '12/27'
   const nombre = (usuario?.nombre ?? '').toUpperCase()
 
   return (
-    <div
-      className={`credit-card-container ${!isCompatible ? 'credit-card--disabled' : ''}`}
-      onClick={() => setCardFlipped(v => !v)}
-    >
-      <div className={`credit-card-inner ${cardFlipped ? 'credit-card-inner--flipped' : ''}`}>
+    <div className="card-block">
+      <div
+        className={`credit-card-container ${!isCompatible ? 'credit-card--disabled' : ''}`}
+        onClick={() => setCardFlipped(v => !v)}
+      >
+        <div className={`credit-card-inner ${cardFlipped ? 'credit-card-inner--flipped' : ''}`}>
 
-        {/* ── FRENTE ── */}
-        <div className="credit-card credit-card--front">
-          <div className="credit-card__deco" aria-hidden="true">
-            <svg width="100%" height="100%" viewBox="0 0 356 150" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="cc-stroke-1" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0"   stopColor="rgba(56,232,220,0)" />
-                  <stop offset="0.5" stopColor="rgba(56,232,220,0.55)" />
-                  <stop offset="1"   stopColor="rgba(56,232,220,0)" />
-                </linearGradient>
-                <linearGradient id="cc-stroke-2" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0"   stopColor="rgba(0,196,106,0)" />
-                  <stop offset="0.5" stopColor="rgba(0,196,106,0.55)" />
-                  <stop offset="1"   stopColor="rgba(0,196,106,0)" />
-                </linearGradient>
-              </defs>
-              <path d="M -40 100 Q  90 30 200 60 T 420  40" fill="none" stroke="url(#cc-stroke-1)" strokeWidth="1.1" />
-              <path d="M -40 118 Q 110 50 230 78 T 430  58" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
-              <path d="M -40 140 Q 130 70 260 96 T 440  80" fill="none" stroke="url(#cc-stroke-2)" strokeWidth="1.2" />
-              <path d="M -40 160 Q 150 90 280 116 T 450 100" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
-            </svg>
-          </div>
-
-          <div className="credit-card__row credit-card__row--top">
-            <KueskiMark size="md" />
-            <span className="credit-card__type-tag">CRÉDITO</span>
-          </div>
-
-          <div className="credit-card__row credit-card__row--chip">
-            <CardChip />
-            <ContactlessIcon />
-          </div>
-
-          <div className="credit-card__number">
-            <span>••••</span>
-            <span>••••</span>
-            <span>••••</span>
-            <span className="credit-card__number--last">{last4}</span>
-          </div>
-
-          <div className="credit-card__row credit-card__row--bottom">
-            <div className="credit-card__col">
-              <span className="credit-card__col-lbl">TITULAR</span>
-              <span className="credit-card__col-val">{nombre || '—'}</span>
+          {/* ── FRENTE ── */}
+          <div className="credit-card credit-card--front">
+            <div className="credit-card__deco" aria-hidden="true">
+              <svg width="100%" height="100%" viewBox="0 0 356 150" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="cc-stroke-1" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0"   stopColor="rgba(56,232,220,0)" />
+                    <stop offset="0.5" stopColor="rgba(56,232,220,0.55)" />
+                    <stop offset="1"   stopColor="rgba(56,232,220,0)" />
+                  </linearGradient>
+                  <linearGradient id="cc-stroke-2" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0"   stopColor="rgba(0,196,106,0)" />
+                    <stop offset="0.5" stopColor="rgba(0,196,106,0.55)" />
+                    <stop offset="1"   stopColor="rgba(0,196,106,0)" />
+                  </linearGradient>
+                </defs>
+                <path d="M -40 100 Q  90 30 200 60 T 420  40" fill="none" stroke="url(#cc-stroke-1)" strokeWidth="1.1" />
+                <path d="M -40 118 Q 110 50 230 78 T 430  58" fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
+                <path d="M -40 140 Q 130 70 260 96 T 440  80" fill="none" stroke="url(#cc-stroke-2)" strokeWidth="1.2" />
+                <path d="M -40 160 Q 150 90 280 116 T 450 100" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+              </svg>
             </div>
-            <div className="credit-card__col credit-card__col--right">
-              <span className="credit-card__col-lbl">VÁLIDA</span>
-              <span className="credit-card__col-val">12 / 27</span>
-            </div>
-          </div>
-        </div>
 
-        {/* ── REVERSO ── */}
-        <div className="credit-card credit-card--back">
-          <div className="credit-card__magstripe" />
-          <div className="credit-card__back-body">
-            <div className="credit-card__sig-row">
-              <div className="credit-card__sig-box">
-                <span className="credit-card__sig-name">{nombre || '—'}</span>
+            <div className="credit-card__row credit-card__row--top">
+              <KueskiMark size="md" pay={false} />
+              <span className="credit-card__type-tag">DÉBITO</span>
+            </div>
+
+            <div className="credit-card__row credit-card__row--chip">
+              <CardChip />
+              <ContactlessIcon />
+            </div>
+
+            <div className="credit-card__number">
+              <span>••••</span>
+              <span>••••</span>
+              <span>••••</span>
+              <span className="credit-card__number--last">{last4}</span>
+            </div>
+
+            <div className="credit-card__row credit-card__row--bottom">
+              <div className="credit-card__col">
+                <span className="credit-card__col-lbl">TITULAR</span>
+                <span className="credit-card__col-val">{nombre || '—'}</span>
               </div>
-              <div className="credit-card__valid-box">
+              <div className="credit-card__col credit-card__col--right">
                 <span className="credit-card__col-lbl">VÁLIDA</span>
-                <span className="credit-card__valid-val">12/27</span>
+                <span className="credit-card__col-val">12 / 27</span>
               </div>
-              <div
-                className="credit-card__cvv-box"
-                onClick={(e) => { e.stopPropagation(); setNipVisible(v => !v) }}
-                title={nipVisible ? 'Ocultar CVV' : 'Mostrar CVV'}
-              >
-                <span className="credit-card__col-lbl">CVV</span>
-                <span className="credit-card__cvv-val">{nipVisible ? nip : '•••'}</span>
-              </div>
-            </div>
-            <div className="credit-card__back-foot">
-              <KueskiMark size="sm" />
-              <span className="credit-card__back-hint">Toca para voltear</span>
             </div>
           </div>
-        </div>
 
+          {/* ── REVERSO ── */}
+          <div className="credit-card credit-card--back">
+            <div className="credit-card__magstripe" />
+            <div className="credit-card__back-body">
+              <div className="credit-card__sig-row">
+                <div className="credit-card__sig-box">
+                  <span className="credit-card__sig-name">{nombre || '—'}</span>
+                </div>
+                <div className="credit-card__valid-box">
+                  <span className="credit-card__col-lbl">VÁLIDA</span>
+                  <span className="credit-card__valid-val">12/27</span>
+                </div>
+                <div
+                  className="credit-card__cvv-box"
+                  onClick={(e) => { e.stopPropagation(); setNipActive(true); setNipVisible(v => !v) }}
+                  title={nipVisible ? 'Ocultar NIP' : 'Mostrar NIP'}
+                >
+                  <span className="credit-card__col-lbl">NIP</span>
+                  <span className="credit-card__cvv-val">{nipVisible ? nip : '•••'}</span>
+                </div>
+              </div>
+              <div className="credit-card__back-foot">
+                <KueskiMark size="sm" />
+                <span className="credit-card__back-hint">Toca para voltear</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
+
+      {isCompatible && (
+        <CardActions pan={pan} last4={last4} vigencia={vigencia} nip={nip} remaining={remaining} period={period} onActivate={() => setNipActive(true)} />
+      )}
     </div>
   )
 }
@@ -300,8 +400,6 @@ function TabInicio({ usuario, isCompatible, onVerTiendas }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const lineaTotal = disponible + adeudo
-  const textoVencimiento = formatVencimiento(usuario?.fecha_vencimiento)
-
   const pct = lineaTotal > 0 ? adeudo / lineaTotal : 0
   const tier = !isCompatible
     ? { label: 'Sin disponibilidad', color: '#6b7280', bg: '#f3f4f6' }
@@ -340,16 +438,6 @@ function TabInicio({ usuario, isCompatible, onVerTiendas }) {
               <button key={label} className="action-btn" onClick={onClick}><Icon /><span>{label}</span></button>
             ))}
           </div>
-          {adeudo > 0 && (
-            <div className="inicio__alert">
-              <div className="inicio__alert-accent" />
-              <div className="inicio__alert-body">
-                <span className="inicio__alert-title">Próximo pago</span>
-                <div className="inicio__alert-amount">${adeudo.toLocaleString('es-MX')} MXN</div>
-                <div className="inicio__alert-due">⚠️ {textoVencimiento}</div>
-              </div>
-            </div>
-          )}
         </>
       ) : (
         <div className="inicio__incompatible">
@@ -1425,7 +1513,7 @@ const NAV_TABS = [
 
 function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
-  const [brand, setBrand] = useState('kueskipay')
+  const [brand, setBrand] = useState('kueski')
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -1545,8 +1633,8 @@ function Dashboard({ usuario, onLogout }) {
       )}
 
       <main className="dashboard__content">
-        {tab === 'inicio' && brand === 'kueski'     && <TabInicioKueski usuario={usuario} />}
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicio usuario={usuario} isCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
+        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} />}
+        {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuario} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}
         {tab === 'historial'   && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}

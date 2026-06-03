@@ -325,8 +325,145 @@
 
 /* ─── Credit Card (v2 — premium) ─────────────────────────────────────────── */
 
+.card-block {
+  margin-bottom: 10px;
+}
+
+/* ── Card quick actions (copy number / dynamic NIP / expiry) ─────────────── */
+.card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 12px 0;
+}
+
+/* Copy toast — floats inside the dashboard, just under the header */
+.copy-toast {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translate(-50%, -10px);
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  background: #1a1a2e;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
+}
+
+.copy-toast svg {
+  color: #34d399;
+}
+
+.copy-toast--show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.card-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  background: #fafbfc;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+  min-width: 0;
+}
+
+.card-action:hover {
+  border-color: var(--brand-color);
+  background: var(--brand-color-soft);
+}
+
+.card-action:active {
+  transform: scale(0.97);
+}
+
+.card-action--done {
+  border-color: #10b981;
+  background: #E7F8EF;
+}
+
+.card-action__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-color);
+  flex-shrink: 0;
+}
+
+.card-action--done .card-action__icon {
+  color: #10b981;
+  border-color: transparent;
+  background: #fff;
+}
+
+.card-action__ring {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-action__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.card-action__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.card-action__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-action__value--nip {
+  letter-spacing: 1.5px;
+  color: var(--brand-color);
+}
+
+.card-action--done .card-action__value {
+  color: #047857;
+}
+
 .credit-card-container {
-  margin: 0 12px 10px;
+  margin: 0 12px 0;
   perspective: 1200px;
   cursor: pointer;
   height: 150px;
