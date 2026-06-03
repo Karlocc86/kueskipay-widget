@@ -32,18 +32,6 @@ const IconAlert    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill=
 const IconLogout   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
 const IconCheck    = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
 
-// ─── Helper ──────────────────────────────────────────────────────────────────
-function formatVencimiento(fechaStr) {
-  if (!fechaStr) return ''
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  const fecha = new Date(fechaStr + 'T00:00:00')
-  const diff = Math.round((fecha - hoy) / (1000 * 60 * 60 * 24))
-  if (diff < 0) return 'Pago vencido'
-  if (diff === 0) return 'Vence hoy'
-  return `Vence en ${diff} día${diff !== 1 ? 's' : ''}`
-}
-
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ disponible, total, isCompatible }) {
   const RADIUS = 46
@@ -172,7 +160,7 @@ function CardActions({ pan, last4, vigencia, nip, remaining, period, onActivate 
   const copy = (key, value, label) => {
     try {
       if (navigator.clipboard) navigator.clipboard.writeText(value)
-    } catch (e) { /* clipboard blocked in sandbox */ }
+    } catch { /* clipboard blocked in sandbox */ }
     setCopied(key)
     setToast(label)
     setTimeout(() => setCopied(c => (c === key ? null : c)), 1200)
@@ -994,21 +982,221 @@ function TabHistorial({ historialCrediticio, historialCompras, tiendas, usuario 
   )
 }
 
-// ─── Notifications Dropdown ──────────────────────────────────────────────────
-function NotificationsDropdown({ onClose }) {
+// ─── Notifications + Coupons icons ───────────────────────────────────────────
+const NotifIconPago = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+const NotifIconCheck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+const NotifIconUp = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+const NotifIconStore = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l1-5h16l1 5" /><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9" /><path d="M3 9h18" /></svg>
+const NotifIconTag = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+const IconTicket = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" /><line x1="13" y1="7" x2="13" y2="17" strokeDasharray="0.1 3" /></svg>
+const IconCopyCoupon = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+const IconClockSm = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+const IconBellBig = () => <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+
+const NOTIF_TYPE = {
+  pago:   { Icon: NotifIconPago,  color: '#F97316', bg: '#FFF3E6' },
+  ok:     { Icon: NotifIconCheck, color: '#10b981', bg: '#E7F8EF' },
+  linea:  { Icon: NotifIconUp,    color: '#10b981', bg: '#E7F8EF' },
+  tienda: { Icon: NotifIconStore, color: '#1A73E8', bg: '#EAF2FE' },
+  cupon:  { Icon: NotifIconTag,   color: '#7C3AED', bg: '#F3EEFE' },
+}
+
+function buildNotifications() {
+  return [
+    { id: 'n1', tipo: 'pago',   grupo: 'Hoy',         titulo: 'Tu pago vence pronto',  texto: 'La cuota de Amazon por $1,200 vence en 3 días.',          tiempo: 'Hace 2 h',   leido: false },
+    { id: 'n2', tipo: 'cupon',  grupo: 'Hoy',         titulo: 'Nuevo cupón para ti',   texto: 'Tienes 10% de descuento en Amazon. Revísalo en Cupones.', tiempo: 'Hace 5 h',   leido: false },
+    { id: 'n3', tipo: 'linea',  grupo: 'Esta semana', titulo: '¡Tu línea subió!',      texto: 'Felicidades, tu línea de crédito aumentó a $6,000 MXN.',  tiempo: 'Ayer',       leido: false },
+    { id: 'n4', tipo: 'ok',     grupo: 'Esta semana', titulo: 'Pago registrado',       texto: 'Recibimos tu pago de $540 de Walmart. ¡Gracias!',        tiempo: 'Hace 3 días', leido: true  },
+    { id: 'n5', tipo: 'tienda', grupo: 'Esta semana', titulo: 'Nueva tienda afiliada', texto: 'Ya puedes pagar en Liverpool a quincenas con KueskiPay.', tiempo: 'Hace 5 días', leido: true  },
+  ]
+}
+
+// Cupones — estilo "como lo haría otra marca". Logos vía PAY_LOGO.
+const COUPONS = [
+  { id: 'c1', marca: 'Amazon',        color: '#FF9900', desc: '10% de descuento', terms: 'En electrónicos seleccionados', codigo: 'KUESKI10',   vence: '30 jun', nuevo: true },
+  { id: 'c2', marca: 'Mercado Libre', color: '#FFE600', dark: true, desc: '$200 de descuento', terms: 'En compras mayores a $1,500', codigo: 'MELIKP200', vence: '15 jul', nuevo: true },
+  { id: 'c3', marca: 'Liverpool',     color: '#E6007E', desc: 'Envío gratis',     terms: 'Sin monto mínimo de compra',    codigo: 'ENVIOKP',    vence: '28 jun', nuevo: false },
+  { id: 'c4', marca: 'Walmart',       color: '#0071CE', desc: '2x1',              terms: 'En productos seleccionados',     codigo: 'WALMART2X1', vence: '10 jul', nuevo: false },
+]
+
+function CouponLogo({ marca }) {
+  const logo = PAY_LOGO[marca]
+  const initials = marca.split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase()
+  return (
+    <span className="coupon__logo">
+      {logo ? (
+        <img src={logo} alt="" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex' }} />
+      ) : null}
+      <span className="coupon__logo-fallback" style={{ display: logo ? 'none' : 'flex' }}>{initials}</span>
+    </span>
+  )
+}
+
+function CouponCard({ cupon, copied, onCopy }) {
+  const isCopied = copied === cupon.id
+  return (
+    <article className="coupon" style={{ '--coupon-accent': cupon.color }}>
+      <div className="coupon__top">
+        <CouponLogo marca={cupon.marca} />
+        <div className="coupon__info">
+          <span className="coupon__brand">{cupon.marca}</span>
+          <span className="coupon__desc">{cupon.desc}</span>
+          <span className="coupon__terms">{cupon.terms}</span>
+        </div>
+        {cupon.nuevo && <span className="coupon__badge">Nuevo</span>}
+      </div>
+
+      <div className="coupon__perf" aria-hidden="true" />
+
+      <div className="coupon__bottom">
+        <span className="coupon__code">
+          <span className="coupon__code-lbl">Código</span>
+          <span className="coupon__code-val">{cupon.codigo}</span>
+        </span>
+        <button
+          type="button"
+          className={`coupon__copy ${isCopied ? 'coupon__copy--done' : ''}`}
+          onClick={() => onCopy(cupon)}
+        >
+          {isCopied ? <IconCheck /> : <IconCopyCoupon />}
+          <span>{isCopied ? 'Copiado' : 'Copiar'}</span>
+        </button>
+      </div>
+
+      <span className="coupon__expiry"><IconClockSm /> Vence el {cupon.vence}</span>
+    </article>
+  )
+}
+
+// ─── Notifications Panel (mismo patrón que Settings/Calendario) ───────────────
+function NotificationsPanel({ notifs, onMarkRead, onMarkAllRead, onClose }) {
   const ref = useRef()
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose()
-    }
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', esc) }
   }, [onClose])
 
+  const unread = notifs.filter(n => !n.leido).length
+
+  const grupos = useMemo(() => {
+    const out = {}
+    notifs.forEach(n => { (out[n.grupo] = out[n.grupo] || []).push(n) })
+    return out
+  }, [notifs])
+
   return (
-    <div className="notif-dropdown" ref={ref}>
-      <p className="notif-empty">No hay notificaciones</p>
+    <div className="settings-panel notif-panel" ref={ref}>
+      <header className="settings-panel__header">
+        <h3 className="settings-panel__title">Notificaciones</h3>
+        {unread > 0 && (
+          <button className="notif-markall" onClick={onMarkAllRead}>Marcar leídas</button>
+        )}
+        <button className="settings-panel__close" onClick={onClose} aria-label="Cerrar">
+          <IconClose />
+        </button>
+      </header>
+
+      <div className="settings-panel__body notif-panel__body">
+        {notifs.length > 0 ? (
+          Object.entries(grupos).map(([grupo, items]) => (
+            <section key={grupo} className="settings-section">
+              <span className="hist-eyebrow">{grupo}</span>
+              <div className="notif-list">
+                {items.map(n => {
+                  const meta = NOTIF_TYPE[n.tipo] || NOTIF_TYPE.ok
+                  const { Icon } = meta
+                  return (
+                    <button
+                      key={n.id}
+                      className={`notif-row ${n.leido ? '' : 'notif-row--unread'}`}
+                      onClick={() => onMarkRead(n.id)}
+                    >
+                      <span className="notif-row__icon" style={{ color: meta.color, background: meta.bg }}>
+                        <Icon />
+                      </span>
+                      <span className="notif-row__body">
+                        <span className="notif-row__title">{n.titulo}</span>
+                        <span className="notif-row__text">{n.texto}</span>
+                        <span className="notif-row__time">{n.tiempo}</span>
+                      </span>
+                      {!n.leido && <span className="notif-row__dot" aria-hidden="true" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          ))
+        ) : (
+          <div className="notif-empty-state">
+            <IconBellBig />
+            <p className="notif-empty-state__title">Estás al día</p>
+            <p className="notif-empty-state__sub">No tienes notificaciones nuevas.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Coupons Panel (sección propia, mismo patrón que Settings/Calendario) ─────
+function CouponsPanel({ onClose }) {
+  const ref = useRef()
+  const [copied, setCopied] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
+    document.addEventListener('mousedown', handler)
+    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', esc) }
+  }, [onClose])
+
+  const copyCode = (cupon) => {
+    try { if (navigator.clipboard) navigator.clipboard.writeText(cupon.codigo) } catch {}
+    setCopied(cupon.id)
+    setToast(`Código ${cupon.codigo} copiado`)
+    setTimeout(() => setCopied(c => (c === cupon.id ? null : c)), 1400)
+    setTimeout(() => setToast(t => (t && t.includes(cupon.codigo) ? null : t)), 1900)
+  }
+
+  return (
+    <div className="settings-panel coupons-panel" ref={ref}>
+      <header className="settings-panel__header">
+        <h3 className="settings-panel__title">Cupones</h3>
+        <button className="settings-panel__close" onClick={onClose} aria-label="Cerrar">
+          <IconClose />
+        </button>
+      </header>
+
+      <div className={`copy-toast notif-toast ${toast ? 'copy-toast--show' : ''}`} role="status" aria-live="polite">
+        <IconCheck />
+        <span>{toast}</span>
+      </div>
+
+      <div className="settings-panel__body">
+        <section className="coupons-hero">
+          <span className="coupons-hero__icon"><IconTicket /></span>
+          <div className="coupons-hero__copy">
+            <span className="coupons-hero__title">{COUPONS.length} cupones para ti</span>
+            <span className="coupons-hero__sub">Úsalos al pagar con KueskiPay en tiendas afiliadas.</span>
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <span className="hist-eyebrow">Cupones disponibles</span>
+          <div className="coupon-list">
+            {COUPONS.map(c => (
+              <CouponCard key={c.id} cupon={c} copied={copied} onCopy={copyCode} />
+            ))}
+          </div>
+          <p className="settings-section__hint">Aplica el código al pagar con KueskiPay en la tienda afiliada.</p>
+        </section>
+      </div>
     </div>
   )
 }
@@ -1517,6 +1705,9 @@ function Dashboard({ usuario, onLogout }) {
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [showCoupons, setShowCoupons] = useState(false)
+  const [notifs, setNotifs] = useState(buildNotifications)
+  const unreadNotifs = notifs.filter((n) => !n.leido).length
   const [tiendas, setTiendas] = useState([])
   const [historialCrediticio, setHistorialCrediticio] = useState(null)
   const [historialCompras, setHistorialCompras] = useState([])
@@ -1589,10 +1780,20 @@ function Dashboard({ usuario, onLogout }) {
           <BrandSwitcher brand={brand} onChange={setBrand} />
         </div>
         <div className="dashboard__header-icons" style={{ position: 'relative' }}>
+          <div className="coupon-wrapper">
+            <button
+              className="icon-btn"
+              aria-label="Cupones"
+              onClick={() => { setShowCoupons(true); setShowNotifications(false); setShowSettings(false); setShowCalendar(false) }}
+            >
+              <IconTicket />
+            </button>
+            {COUPONS.length > 0 && <span className="coupon-badge">{COUPONS.length}</span>}
+          </div>
           <button
             className="icon-btn"
             aria-label="Calendario de pagos"
-            onClick={() => { setShowCalendar(true); setShowNotifications(false); setShowSettings(false) }}
+            onClick={() => { setShowCalendar(true); setShowNotifications(false); setShowSettings(false); setShowCoupons(false) }}
           >
             <IconCalendarHeader />
           </button>
@@ -1600,23 +1801,34 @@ function Dashboard({ usuario, onLogout }) {
             <button
               className="icon-btn"
               aria-label="Notificaciones"
-              onClick={() => { setShowNotifications((v) => !v); setShowSettings(false); setShowCalendar(false) }}
+              onClick={() => { setShowNotifications(true); setShowSettings(false); setShowCalendar(false); setShowCoupons(false) }}
             >
               <IconBell />
             </button>
+            {unreadNotifs > 0 && <span className="bell-badge">{unreadNotifs}</span>}
           </div>
           <button
             className="icon-btn"
             aria-label="Configuración"
-            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false); setShowCalendar(false) }}
+            onClick={() => { setShowSettings((v) => !v); setShowNotifications(false); setShowCalendar(false); setShowCoupons(false) }}
           >
             <IconSettings />
           </button>
-          {showNotifications && (
-            <NotificationsDropdown onClose={() => setShowNotifications(false)} />
-          )}
         </div>
       </header>
+
+      {showNotifications && (
+        <NotificationsPanel
+          notifs={notifs}
+          onMarkRead={(id) => setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, leido: true } : n)))}
+          onMarkAllRead={() => setNotifs((prev) => prev.map((n) => ({ ...n, leido: true })))}
+          onClose={() => setShowNotifications(false)}
+        />
+      )}
+
+      {showCoupons && (
+        <CouponsPanel onClose={() => setShowCoupons(false)} />
+      )}
 
       {showSettings && (
         <SettingsDropdown

@@ -8,7 +8,7 @@
 
   // ─── Context validity guard ──────────────────────────────────────────────────
   function isContextValid() {
-    try { chrome.runtime.getURL(''); return true; } catch(e) { return false; }
+    try { chrome.runtime.getURL(''); return true; } catch { return false; }
   }
 
   const PRIMARY      = '#0d8a7a';
@@ -286,7 +286,7 @@
   shadow.appendChild(drawer);
 
   // ─── Auto-cleanup ────────────────────────────────────────────────────────────
-  try { chrome.runtime.onConnect.addListener(() => {}); } catch(e) {}
+  try { chrome.runtime.onConnect.addListener(() => {}); } catch {}
   window.addEventListener('unload', () => host.remove());
 
   // ─── Position ────────────────────────────────────────────────────────────────

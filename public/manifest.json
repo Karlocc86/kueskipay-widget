@@ -18,8 +18,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://*/*",
-    "http://*/*"
+    "https://nhpkrbgvdtjwvgrvjqyf.supabase.co/*"
   ],
   "content_scripts": [
     {
@@ -46,7 +45,7 @@
   },
   "web_accessible_resources": [{
     "resources": [
-      "icon18.png",
+      "icon16.png",
       "icon48.png",
       "icon128.png",
       "kueski.png",
