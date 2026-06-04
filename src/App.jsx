@@ -20,7 +20,7 @@ function App() {
           .single()
         if (data) {
           setUsuario(data)
-          try { chrome.storage.local.set({ kpay_user: data }) } catch (_) {}
+          try { chrome.storage.local.set({ kpay_user: data }) } catch {}
         }
       }
       setLoading(false)
@@ -50,13 +50,13 @@ function App() {
       .single()
     if (data) {
       setUsuario(data)
-      try { chrome.storage.local.set({ kpay_user: data }) } catch (_) {}
+      try { chrome.storage.local.set({ kpay_user: data }) } catch {}
     }
   }
 
   const handleLogout = () => {
     supabase.auth.signOut()
-    try { chrome.storage.local.remove('kpay_user') } catch (_) {}
+    try { chrome.storage.local.remove('kpay_user') } catch {}
   }
 
   return usuario
