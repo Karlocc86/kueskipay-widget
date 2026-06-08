@@ -38,11 +38,28 @@
   const shadow = host.attachShadow({ mode: 'open' });
 
   // ─── Styles (todo dentro del shadow) ─────────────────────────────────────────
+  const fontUrl = assetUrl('jakarta.woff2');   // '' si el contexto se invalidó
   const style = document.createElement('style');
   style.textContent = `
+    ${fontUrl ? `@font-face {
+      font-family: 'Kueski Sans';
+      src: url('${fontUrl}') format('woff2');
+      font-weight: 200 800;
+      font-display: swap;
+    }` : ''}
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :host { --kp-primary:${PRIMARY}; }
+    :host {
+      --kp-primary:${PRIMARY};
+      --kp-ink:#0e1b16;          /* texto principal */
+      --kp-ink-soft:#5b6b66;     /* texto secundario */
+      --kp-ink-mute:#93a39d;     /* texto terciario */
+      --kp-line:#e4ece9;         /* líneas/bordes */
+      --kp-surface:#ffffff;      /* superficie panel */
+      --kp-surface-2:#f4f8f6;    /* superficie suave */
+      --kp-font:'Kueski Sans','SF Pro Display','Segoe UI Variable','Segoe UI',system-ui,-apple-system,sans-serif;
+    }
 
     /* ── FAB ── */
     .fab {
@@ -113,66 +130,87 @@
     }
     .fab__badge--on { transform: scale(1); animation: kpBadgePulse 2.4s ease-out infinite; }
 
-    /* ── Drawer ── */
+    /* ── Panel (claro minimalista) ── */
     .drawer {
       position: fixed;
       width: ${DRAWER_W}px;
       max-width: calc(100vw - ${MARGIN * 2}px);
       display: flex;
       flex-direction: column;
-      /* Off-white cálido con un sutil degradado vertical para dar atmósfera */
-      background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
+      background: var(--kp-surface);
       border-radius: 22px;
       box-shadow:
-        0 32px 70px -12px rgba(6,42,35,0.34),
-        0 12px 28px -8px rgba(6,42,35,0.18),
-        0 0 0 1px rgba(13,138,122,0.07),
-        inset 0 1px 0 rgba(255,255,255,0.9);
+        0 28px 64px -14px rgba(6,42,35,0.28),
+        0 10px 24px -10px rgba(6,42,35,0.14),
+        0 0 0 1px rgba(14,27,22,0.05);
       pointer-events: none;
       opacity: 0;
-      transform: scale(0.92) translateY(var(--kp-enter-ty, 12px));
-      transform-origin: right bottom;
-      transition: opacity .24s ease, transform .42s cubic-bezier(.2,1,.32,1);
-      font-family: "SF Pro Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
-      font-feature-settings: "ss01" 1, "cv01" 1;
+      transform: scale(0.9) translateY(var(--kp-enter-ty, 8px));
+      transform-origin: right bottom;   /* se sobrescribe en applyPos hacia el FAB */
+      transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1);
+      font-family: var(--kp-font);
+      font-feature-settings: "ss01" 1;
       -webkit-font-smoothing: antialiased;
-      color: #14202b;
-      overflow: hidden;
+      text-rendering: optimizeLegibility;
+      color: var(--kp-ink);
+      overflow: visible;                /* el beak vive fuera del borde */
     }
     .drawer--open { opacity: 1; transform: scale(1) translateY(0); pointer-events: all; }
+
+    /* Conector (beak) que ancla el panel al FAB */
+    .drawer__beak {
+      position: absolute; width: 0; height: 0; z-index: 2;
+      left: 0; /* posición exacta la fija applyPos */
+    }
+    .drawer__beak--down {
+      border-left: 9px solid transparent; border-right: 9px solid transparent;
+      border-top: 10px solid var(--kp-surface);
+      bottom: -9px;
+      filter: drop-shadow(0 7px 5px rgba(6,42,35,0.10));
+    }
+    .drawer__beak--up {
+      border-left: 9px solid transparent; border-right: 9px solid transparent;
+      border-bottom: 10px solid var(--kp-surface);
+      top: -9px;
+      filter: drop-shadow(0 -5px 4px rgba(6,42,35,0.06));
+    }
+
+    /* clip interno para que el contenido respete el radio (overflow del panel es visible) */
+    .drawer__clip {
+      border-radius: 22px; overflow: hidden;
+      display: flex; flex-direction: column;
+      flex: 1 1 auto; min-height: 0;   /* permite que .drawer__body haga scroll */
+    }
 
     /* reveal escalonado del contenido */
     .kp-reveal { opacity: 0; }
     .drawer--open .kp-reveal {
-      animation: kpRise .5s cubic-bezier(.2,1,.32,1) both;
-      animation-delay: calc(var(--i, 0) * 62ms);
+      animation: kpRise .46s cubic-bezier(.2,1,.3,1) both;
+      animation-delay: calc(var(--i, 0) * 55ms);
     }
 
-    /* Header: vidrio teal + textura de puntos para profundidad */
+    /* SVG icons */
+    .kp-ico { display: inline-flex; flex: 0 0 auto; }
+    .kp-ico svg { display: block; }
+
+    /* Header */
     .drawer__header {
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 15px 16px 14px;
-      background:
-        radial-gradient(rgba(13,138,122,0.10) 1px, transparent 1.4px) 0 0 / 11px 11px,
-        linear-gradient(135deg, rgba(22,184,159,0.12), rgba(13,138,122,0.03));
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 16px 13px;
     }
-    .drawer__header::after {        /* línea de acento degradada bajo el header */
+    .drawer__header::after {
       content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(13,138,122,0.35), transparent);
+      background: var(--kp-line);
     }
     .drawer__brand { display: flex; align-items: center; gap: 9px; }
-    .drawer__brand-img { height: 23px; width: auto; object-fit: contain; }
+    .drawer__brand-img { height: 22px; width: auto; object-fit: contain; }
     .drawer__live {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 9.5px; font-weight: 800; letter-spacing: .4px;
-      text-transform: uppercase;
+      font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
       color: ${PRIMARY_DARK};
-      background: rgba(124,245,184,0.26);
+      background: rgba(13,138,122,0.08);
       padding: 4px 9px; border-radius: 999px;
-      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.12);
     }
     .drawer__live-dot {
       width: 6px; height: 6px; border-radius: 50%;
@@ -180,196 +218,145 @@
       animation: kpBadgePulse 2s ease-out infinite;
     }
     .drawer__close {
-      position: absolute; top: 11px; right: 11px;
-      width: 26px; height: 26px;
-      display: grid; place-items: center;
-      background: rgba(20,32,43,0.05);
-      border: none; cursor: pointer;
-      color: #6b7785; font-size: 14px; line-height: 1;
-      border-radius: 9px;
+      width: 28px; height: 28px; display: grid; place-items: center;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--kp-ink-mute); border-radius: 9px;
       transition: background .15s, color .15s, transform .25s cubic-bezier(.34,1.56,.64,1);
     }
-    .drawer__close:hover { background: rgba(20,32,43,0.1); color: #14202b; transform: rotate(90deg); }
+    .drawer__close:hover { background: var(--kp-surface-2); color: var(--kp-ink); transform: rotate(90deg); }
 
     .drawer__body {
-      padding: 15px 16px;
-      display: flex; flex-direction: column; gap: 12px;
+      padding: 14px 16px 4px;
+      display: flex; flex-direction: column; gap: 13px;
       overflow-y: auto;
     }
     .drawer__body::-webkit-scrollbar { width: 6px; }
-    .drawer__body::-webkit-scrollbar-thumb { background: rgba(13,138,122,.25); border-radius: 6px; }
+    .drawer__body::-webkit-scrollbar-thumb { background: rgba(13,138,122,.22); border-radius: 6px; }
 
-    .drawer__status {
-      display: flex; align-items: center; gap: 7px;
-      padding: 8px 12px; border-radius: 10px;
-      font-size: 12px; font-weight: 600; line-height: 1.3;
-    }
-    .drawer__status-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
-    .drawer__status--green { background: #effdf5; color: #166534; border: 1px solid #c4f0d4; }
-    .drawer__status--green .drawer__status-dot { background: #1fb968; }
-    .drawer__status--red { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .drawer__status--red .drawer__status-dot { background: #ef4444; }
-
-    /* ── Tarjeta de crédito (HERO) — credencial premium oscura ── */
-    .drawer__card {
-      position: relative;
-      border-radius: 18px;
-      padding: 16px 17px 17px;
-      color: #eafff7;
-      aspect-ratio: 1.586 / 1;            /* proporción de tarjeta real */
-      display: flex; flex-direction: column;
-      background:
-        radial-gradient(140% 120% at 88% -10%, rgba(22,184,159,0.55) 0%, transparent 45%),
-        radial-gradient(120% 130% at 0% 120%, rgba(124,245,184,0.18) 0%, transparent 50%),
-        linear-gradient(150deg, #0c5446 0%, #073a30 52%, #05241d 100%);
-      box-shadow:
-        0 14px 34px -8px rgba(4,30,24,0.55),
-        0 4px 10px rgba(4,30,24,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.16),
-        inset 0 0 0 1px rgba(124,245,184,0.10);
-      overflow: hidden;
-      isolation: isolate;
-    }
-    /* Arcos concéntricos decorativos (motivo de marca) */
-    .drawer__card::before {
-      content: ''; position: absolute; right: -58px; bottom: -72px;
-      width: 190px; height: 190px; border-radius: 50%;
-      border: 1.5px solid rgba(124,245,184,0.14);
-      box-shadow: 0 0 0 22px rgba(124,245,184,0.06);
-      pointer-events: none; z-index: 0;
-    }
-    /* Destello holográfico que barre al abrir */
-    .drawer__card-sheen {
-      position: absolute; inset: 0; z-index: 1; pointer-events: none;
-      background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 47%, rgba(255,255,255,0.05) 54%, transparent 70%);
-      transform: translateX(-120%);
-    }
-    .drawer--open .drawer__card-sheen { animation: kpSheen 1.15s cubic-bezier(.2,.7,.3,1) .42s both; }
-
-    .drawer__card-top {
-      position: relative; z-index: 2;
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: auto;
-    }
-    /* Chip dorado estilo tarjeta */
-    .drawer__chip {
-      width: 30px; height: 23px; border-radius: 6px;
-      background: linear-gradient(135deg, #f6e3a8 0%, #d9b46a 38%, #b8923f 70%, #e6cf95 100%);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), inset 0 -1px 2px rgba(120,80,20,0.4), 0 1px 2px rgba(0,0,0,0.25);
+    /* ── HERO de compatibilidad: responde "¿puedo pagar aquí?" ── */
+    .drawer__hero {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px; border-radius: 16px;
       position: relative; overflow: hidden;
     }
-    .drawer__chip::before, .drawer__chip::after {
-      content: ''; position: absolute; background: rgba(120,80,20,0.45);
+    .drawer__hero-ico {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; flex: 0 0 auto;
     }
-    .drawer__chip::before { left: 0; right: 0; top: 50%; height: 1px; }
-    .drawer__chip::after  { top: 0; bottom: 0; left: 33%; width: 1px;
-      box-shadow: 11px 0 0 rgba(120,80,20,0.45); }
-    .drawer__card-mark {
-      font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
-      text-transform: uppercase; color: rgba(234,255,247,0.55);
+    .drawer__hero-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .drawer__hero-title {
+      font-size: 14.5px; font-weight: 800; letter-spacing: -.2px; line-height: 1.15;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    .drawer__hero-sub { font-size: 11.5px; font-weight: 500; line-height: 1.25; }
 
-    .drawer__card-lbl {
-      position: relative; z-index: 2;
-      font-size: 9.5px; font-weight: 800; letter-spacing: 1px;
-      text-transform: uppercase; color: rgba(234,255,247,0.62);
-      display: block; margin-bottom: 4px;
+    .drawer__hero--ok {
+      background: linear-gradient(135deg, rgba(22,184,159,0.12), rgba(13,138,122,0.05));
+      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.14);
     }
-    .drawer__card-figure {
-      position: relative; z-index: 2;
-      display: flex; align-items: baseline; gap: 7px;
+    .drawer__hero--ok .drawer__hero-ico {
+      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(13,138,122,0.5);
     }
-    .drawer__card-val {
-      font-size: 30px; font-weight: 800; line-height: 1;
-      letter-spacing: -1px; color: #fff;
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 1px 8px rgba(0,0,0,0.25);
-    }
-    .drawer__card-cur {
-      font-size: 10px; font-weight: 800; letter-spacing: .5px;
-      color: ${ACCENT}; padding: 2px 6px; border-radius: 6px;
-      background: rgba(124,245,184,0.14);
-      box-shadow: inset 0 0 0 1px rgba(124,245,184,0.22);
-    }
-    .drawer__card-sub {
-      position: relative; z-index: 2;
-      font-size: 12px; opacity: .82; font-weight: 600;
-      display: block; margin-top: 8px; letter-spacing: .1px;
-    }
+    .drawer__hero--ok .drawer__hero-title { color: ${PRIMARY_DARK}; }
+    .drawer__hero--ok .drawer__hero-sub { color: ${PRIMARY}; }
 
-    /* Producto detectado — barra de acento lateral */
-    .drawer__product {
-      position: relative;
-      background: #ffffff; border: 1px solid #e6eef0;
-      border-radius: 14px; padding: 11px 14px 11px 16px;
-      box-shadow: 0 2px 8px rgba(8,60,50,0.05);
-      overflow: hidden;
+    .drawer__hero--no {
+      background: var(--kp-surface-2);
+      box-shadow: inset 0 0 0 1px var(--kp-line);
     }
-    .drawer__product::before {
-      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-      background: linear-gradient(${PRIMARY_LITE}, ${PRIMARY});
+    .drawer__hero--no .drawer__hero-ico { background: #eef2f1; color: #8a9b95; }
+    .drawer__hero--no .drawer__hero-title { color: var(--kp-ink); }
+    .drawer__hero--no .drawer__hero-sub { color: var(--kp-ink-soft); }
+
+    /* ── Crédito disponible (claro) ── */
+    .drawer__credit {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 4px 2px;
     }
+    .drawer__credit-ico {
+      width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
+      display: grid; place-items: center;
+      background: var(--kp-surface-2); color: ${PRIMARY};
+      box-shadow: inset 0 0 0 1px var(--kp-line);
+    }
+    .drawer__credit-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .drawer__credit-lbl {
+      font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+      color: var(--kp-ink-mute);
+    }
+    .drawer__credit-figure { display: flex; align-items: baseline; gap: 6px; }
+    .drawer__credit-val {
+      font-size: 27px; font-weight: 800; line-height: 1; letter-spacing: -1px;
+      color: var(--kp-ink); font-variant-numeric: tabular-nums;
+    }
+    .drawer__credit-cur { font-size: 11px; font-weight: 700; color: var(--kp-ink-soft); }
+    .drawer__credit-name { font-size: 11.5px; font-weight: 600; color: var(--kp-ink-soft); margin-top: 1px; }
+
+    .drawer__divider { height: 1px; background: var(--kp-line); margin: 1px 0; }
+
+    /* ── Producto detectado ── */
+    .drawer__product { padding: 2px; }
     .drawer__product-tag {
-      font-size: 9px; font-weight: 800; letter-spacing: .6px;
-      text-transform: uppercase; color: ${PRIMARY};
-      display: inline-flex; align-items: center; gap: 4px;
-      margin-bottom: 5px;
-    }
-    .drawer__product-tag::before {
-      content: ''; width: 5px; height: 5px; border-radius: 50%;
-      background: ${PRIMARY}; box-shadow: 0 0 0 3px rgba(13,138,122,0.14);
+      font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
+      color: ${PRIMARY}; display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
     }
     .drawer__product-name {
-      font-size: 12.5px; font-weight: 600; color: #2b3a47;
-      display: block; overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap; margin-bottom: 7px;
+      font-size: 13px; font-weight: 700; color: var(--kp-ink); letter-spacing: -.1px;
+      display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px;
     }
-    .drawer__product-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .drawer__product-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .drawer__product-price {
-      font-size: 18px; font-weight: 800; color: #14202b; letter-spacing: -.4px;
+      font-size: 18px; font-weight: 800; color: var(--kp-ink); letter-spacing: -.4px;
       font-variant-numeric: tabular-nums;
     }
     .drawer__product-quin {
-      font-size: 10.5px; font-weight: 800; color: ${PRIMARY}; white-space: nowrap;
-      background: rgba(13,138,122,.1); padding: 4px 9px; border-radius: 999px;
-      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.12);
+      font-size: 11px; font-weight: 800; color: ${PRIMARY_DARK}; white-space: nowrap;
+      background: rgba(13,138,122,.1); padding: 5px 10px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 5px;
     }
 
+    /* ── Botones ── */
     .drawer__btn {
       position: relative;
       width: 100%; padding: 13px 0;
       border-radius: 13px; border: none; cursor: pointer;
-      font-size: 13.5px; font-weight: 800; font-family: inherit; letter-spacing: .2px;
+      font-size: 13.5px; font-weight: 800; font-family: inherit; letter-spacing: .1px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, background .15s ease;
       overflow: hidden;
     }
     .drawer__btn--primary {
       color: #fff;
-      background: linear-gradient(135deg, ${PRIMARY_LITE} 0%, ${PRIMARY} 60%, ${PRIMARY_DARK} 100%);
-      box-shadow: 0 8px 18px -4px rgba(13,138,122,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+      background: linear-gradient(135deg, ${PRIMARY_LITE} 0%, ${PRIMARY} 62%, ${PRIMARY_DARK} 100%);
+      box-shadow: 0 8px 18px -5px rgba(13,138,122,0.5), inset 0 1px 0 rgba(255,255,255,0.22);
     }
-    .drawer__btn--primary::after {     /* barrido de luz sutil al hover */
+    .drawer__btn--primary::after {
       content: ''; position: absolute; inset: 0;
-      background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.3) 50%, transparent 65%);
+      background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%);
       transform: translateX(-120%); transition: transform .55s ease;
     }
-    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -6px rgba(13,138,122,0.58), inset 0 1px 0 rgba(255,255,255,0.25); }
+    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -7px rgba(13,138,122,0.58), inset 0 1px 0 rgba(255,255,255,0.22); }
     .drawer__btn--primary:hover::after { transform: translateX(120%); }
     .drawer__btn--primary:active { transform: translateY(0) scale(.985); }
-    .drawer__btn--outline {
-      background: #fff; color: ${PRIMARY_DARK}; border: 1.5px solid rgba(13,138,122,.35);
-      box-shadow: 0 2px 8px rgba(8,60,50,0.06);
+    .drawer__btn--ghost {
+      background: var(--kp-surface-2); color: ${PRIMARY_DARK};
+      box-shadow: inset 0 0 0 1px var(--kp-line);
     }
-    .drawer__btn--outline:hover { background: #f0faf8; border-color: ${PRIMARY}; transform: translateY(-1px); }
+    .drawer__btn--ghost:hover { background: #eef5f3; transform: translateY(-1px); }
 
-    .drawer__footer { padding: 10px 16px 14px; border-top: 1px solid #f0f3f5; }
+    /* ── Footer ── */
+    .drawer__footer { padding: 8px 16px 14px; }
     .drawer__footer-btn {
       width: 100%; background: none; border: none; cursor: pointer;
-      font-size: 12.5px; font-weight: 700; color: #8a96a3;
-      font-family: inherit; padding: 7px 0; border-radius: 9px;
+      font-size: 12px; font-weight: 700; color: var(--kp-ink-mute);
+      font-family: inherit; padding: 8px 0; border-radius: 9px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       transition: color .15s, background .15s;
     }
-    .drawer__footer-btn:hover { color: ${PRIMARY}; background: #f4faf9; }
+    .drawer__footer-btn:hover { color: ${PRIMARY}; background: var(--kp-surface-2); }
+    .drawer__footer-btn svg { transition: transform .2s ease; }
+    .drawer__footer-btn:hover svg { transform: translateX(3px); }
 
     /* ── Keyframes ── */
     @keyframes kpFabIn {
@@ -387,20 +374,14 @@
       100% { box-shadow: 0 0 0 0 rgba(13,138,122,0); }
     }
     @keyframes kpRise {
-      from { opacity: 0; transform: translateY(9px); }
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes kpSheen {
-      0%   { transform: translateX(-120%); }
-      100% { transform: translateX(120%); }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .fab, .drawer, .fab__badge { animation: none !important; transition: opacity .15s ease !important; }
       .drawer { transform: none; }
-      /* Sin animación de entrada, el contenido debe quedar visible (no en opacity:0) */
       .kp-reveal { opacity: 1 !important; animation: none !important; }
-      .drawer__card-sheen { display: none !important; }
     }
   `;
   shadow.appendChild(style);
@@ -429,6 +410,14 @@
   drawer.setAttribute('aria-modal', 'true');
   drawer.setAttribute('aria-label', 'Panel de KueskiPay');
 
+  // Estructura persistente: beak (conector) + clip (contenedor recortado al radio).
+  // renderDrawer rellena `clip`, no `drawer`, para no borrar el beak.
+  const beak = document.createElement('span');
+  beak.className = 'drawer__beak drawer__beak--down';
+  const clip = document.createElement('div');
+  clip.className = 'drawer__clip';
+  drawer.append(beak, clip);
+
   shadow.appendChild(fab);
   shadow.appendChild(drawer);
 
@@ -449,6 +438,8 @@
   function vpW() { return document.documentElement.clientWidth  || window.innerWidth; }
   function vpH() { return document.documentElement.clientHeight || window.innerHeight; }
 
+  const GAP = 12;   // separación panel ↔ FAB: el FAB nunca queda cubierto
+
   function applyPos() {
     fab.style.bottom = fabPos.bottom + 'px';
     fab.style.right  = fabPos.right  + 'px';
@@ -458,47 +449,42 @@
 
     const fabLeft = vw - fabPos.right - FAB_SIZE;
     const fabTop  = vh - fabPos.bottom - FAB_SIZE;
+    const fabCenterX = fabLeft + FAB_SIZE / 2;
     const fabCenterY = fabTop + FAB_SIZE / 2;
 
     const drawerW = Math.min(DRAWER_W, vw - MARGIN * 2);
 
-    // Dirección vertical: si el FAB está en la mitad alta → abre hacia ABAJO.
+    // Vertical: el panel se coloca arriba o abajo del FAB, dejándolo visible.
     const openDown = fabCenterY < vh / 2;
-
     if (openDown) {
-      // El drawer alinea su borde superior con el del FAB y crece hacia abajo.
-      const top = Math.max(MARGIN, fabTop);
+      const top = fabTop + FAB_SIZE + GAP;          // panel debajo del FAB
       drawer.style.top = top + 'px';
       drawer.style.bottom = 'auto';
       drawer.style.maxHeight = (vh - top - MARGIN) + 'px';
-      drawer.style.setProperty('--kp-enter-ty', '-10px');
+      drawer.style.setProperty('--kp-enter-ty', '-8px');
     } else {
-      // El drawer alinea su borde inferior con el del FAB y crece hacia arriba.
-      const bottom = Math.max(MARGIN, fabPos.bottom);
+      const bottom = fabPos.bottom + FAB_SIZE + GAP; // panel encima del FAB
       drawer.style.bottom = bottom + 'px';
       drawer.style.top = 'auto';
       drawer.style.maxHeight = (vh - bottom - MARGIN) + 'px';
-      drawer.style.setProperty('--kp-enter-ty', '10px');
+      drawer.style.setProperty('--kp-enter-ty', '8px');
     }
 
-    // Dirección horizontal: se alinea al lado donde está pegado el FAB.
-    const isLeftSide = fabLeft + FAB_SIZE / 2 < vw / 2;
-    let left;
-    let originX;
-    if (isLeftSide) {
-      left = fabLeft;
-      originX = 'left';
-    } else {
-      left = fabLeft + FAB_SIZE - drawerW;
-      originX = 'right';
-    }
-    // Clamp dentro del viewport.
+    // Horizontal: alinear el borde cercano al FAB, sin salir del viewport.
+    const isLeftSide = fabCenterX < vw / 2;
+    let left = isLeftSide ? fabLeft : (fabLeft + FAB_SIZE - drawerW);
     left = Math.max(MARGIN, Math.min(left, vw - drawerW - MARGIN));
     drawer.style.left = left + 'px';
     drawer.style.right = 'auto';
     drawer.style.width = drawerW + 'px';
 
-    drawer.style.transformOrigin = `${originX} ${openDown ? 'top' : 'bottom'}`;
+    // El panel "nace" desde la esquina del FAB (transform-origin hacia él).
+    drawer.style.transformOrigin = `${isLeftSide ? 'left' : 'right'} ${openDown ? 'top' : 'bottom'}`;
+
+    // Beak: conector que apunta al centro del FAB desde el borde más cercano.
+    const beakX = Math.max(20, Math.min(fabCenterX - left, drawerW - 20));
+    beak.style.left = (beakX - 9) + 'px';
+    beak.className = 'drawer__beak ' + (openDown ? 'drawer__beak--up' : 'drawer__beak--down');
   }
 
   if (isContextValid()) {
@@ -690,19 +676,19 @@
   function renderDrawer(done) {
     if (!isContextValid()) { host.remove(); return; }
     chrome.storage.local.get(['kpay_user', 'productoDetectado'], (res) => {
-      const user     = res.kpay_user || null;
+      const user      = res.kpay_user || null;
       const detectado = res.productoDetectado || null;
-      const compat   = window.__kueski_force_compatible !== false;
-      const tienda   = window.location.hostname.replace(/^www\./, '');
-      const disp     = user?.credito_disponible ?? 0;
-      const nombre   = user?.nombre ?? '';
+      const compat    = window.__kueski_force_compatible !== false;
+      const tienda    = window.location.hostname.replace(/^www\./, '');
+      const disp      = user?.credito_disponible ?? 0;
+      const nombre    = user?.nombre ?? '';
 
       // El producto solo es válido si pertenece a ESTA tienda y es reciente.
       const FRESCO_MS = 60 * 60 * 1000;
       const producto = detectado && detectado.url === tienda &&
         (Date.now() - (detectado.ts || 0) < FRESCO_MS) ? detectado : null;
 
-      drawer.innerHTML = '';
+      clip.innerHTML = '';
       let revealIndex = 0;
       const reveal = (node) => {
         node.classList.add('kp-reveal');
@@ -716,81 +702,103 @@
       const bi = el('img', 'drawer__brand-img');
       bi.src = assetUrl('kueskipay.png');
       bi.alt = 'KueskiPay';
-      const live = el('span', 'drawer__live');
-      live.append(el('span', 'drawer__live-dot'), document.createTextNode('Disponible'));
-      brand.append(bi, live);
-      const closeBtn = el('button', 'drawer__close', '✕');
+      brand.appendChild(bi);
+      if (compat) {
+        const live = el('span', 'drawer__live');
+        live.append(el('span', 'drawer__live-dot'), document.createTextNode('Disponible'));
+        brand.appendChild(live);
+      }
+      const closeBtn = el('button', 'drawer__close');
       closeBtn.setAttribute('aria-label', 'Cerrar');
+      closeBtn.appendChild(icon('x', 18));
       closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeDrawer(); });
       hdr.append(brand, closeBtn);
-      drawer.appendChild(hdr);
+      clip.appendChild(hdr);
 
       // ── Body ──
       const body = el('div', 'drawer__body');
 
-      // Estado de compatibilidad
-      const badge = el('div', compat ? 'drawer__status drawer__status--green' : 'drawer__status drawer__status--red');
-      badge.append(el('span', 'drawer__status-dot'),
-        document.createTextNode(compat ? `${tienda} · Compatible` : 'Esta tienda no es compatible'));
-      body.appendChild(reveal(badge));
+      // HERO: ¿puedo pagar aquí? — la pregunta más importante, respondida al instante.
+      const hero = el('div', 'drawer__hero ' + (compat ? 'drawer__hero--ok' : 'drawer__hero--no'));
+      const heroIco = el('div', 'drawer__hero-ico');
+      heroIco.appendChild(icon(compat ? 'check' : 'store', 22));
+      const heroTxt = el('div', 'drawer__hero-txt');
+      heroTxt.append(
+        el('span', 'drawer__hero-title', compat ? 'Puedes pagar a quincenas' : 'Tienda no compatible'),
+        el('span', 'drawer__hero-sub', compat ? `Disponible en ${tienda}` : `${tienda} aún no acepta KueskiPay`)
+      );
+      hero.append(heroIco, heroTxt);
+      body.appendChild(reveal(hero));
 
-      // Tarjeta de crédito (HERO) — credencial premium
-      const creditCard = el('div', 'drawer__card');
-      creditCard.appendChild(el('span', 'drawer__card-sheen'));   // destello holográfico
+      body.appendChild(reveal(el('div', 'drawer__divider')));
 
-      const cardTop = el('div', 'drawer__card-top');
-      cardTop.append(el('span', 'drawer__chip'), el('span', 'drawer__card-mark', 'KueskiPay'));
-      creditCard.appendChild(cardTop);
-
-      creditCard.appendChild(el('span', 'drawer__card-lbl', 'Crédito disponible'));
-
-      const figure = el('div', 'drawer__card-figure');
+      // Crédito disponible
+      const credit = el('div', 'drawer__credit');
+      const creditIco = el('div', 'drawer__credit-ico');
+      creditIco.appendChild(icon('wallet', 20));
+      const creditMain = el('div', 'drawer__credit-main');
+      creditMain.appendChild(el('span', 'drawer__credit-lbl', 'Crédito disponible'));
+      const figure = el('div', 'drawer__credit-figure');
       if (user) {
         figure.append(
-          el('span', 'drawer__card-val', `$${disp.toLocaleString('es-MX')}`),
-          el('span', 'drawer__card-cur', 'MXN')
+          el('span', 'drawer__credit-val', `$${disp.toLocaleString('es-MX')}`),
+          el('span', 'drawer__credit-cur', 'MXN')
         );
       } else {
-        figure.appendChild(el('span', 'drawer__card-val', 'Inicia sesión'));
+        figure.appendChild(el('span', 'drawer__credit-val', 'Inicia sesión'));
       }
-      creditCard.appendChild(figure);
+      creditMain.appendChild(figure);
+      if (nombre) creditMain.appendChild(el('span', 'drawer__credit-name', `Hola, ${nombre.split(' ')[0]}`));
+      credit.append(creditIco, creditMain);
+      body.appendChild(reveal(credit));
 
-      if (nombre) creditCard.appendChild(el('span', 'drawer__card-sub', `Hola, ${nombre.split(' ')[0]} 👋`));
-      body.appendChild(reveal(creditCard));
+      // Producto detectado (solo si la tienda es compatible)
+      if (compat && producto) {
+        const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
+        const cuota = raw > 0
+          ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
+          : '4 quincenas';
+        body.appendChild(reveal(el('div', 'drawer__divider')));
+        const pc = el('div', 'drawer__product');
+        const tag = el('span', 'drawer__product-tag');
+        tag.append(icon('tag', 12), document.createTextNode('Producto detectado'));
+        pc.appendChild(tag);
+        pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
+        const pr = el('div', 'drawer__product-row');
+        pr.append(
+          el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
+          el('span', 'drawer__product-quin', cuota)
+        );
+        pc.appendChild(pr);
+        body.appendChild(reveal(pc));
+      }
 
-      if (compat) {
-        if (producto) {
-          const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
-          const cuota = raw > 0 ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')} / qna` : '4 quincenas';
-          const pc = el('div', 'drawer__product');
-          pc.appendChild(el('span', 'drawer__product-tag', 'Producto detectado'));
-          pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
-          const pr = el('div', 'drawer__product-row');
-          pr.append(
-            el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
-            el('span', 'drawer__product-quin', cuota)
-          );
-          pc.appendChild(pr);
-          body.appendChild(reveal(pc));
-        }
-
-        const calcBtn = el('button', 'drawer__btn drawer__btn--primary', 'Calcular financiamiento');
-        calcBtn.addEventListener('click', () => openPopup('calculadora'));
-        body.appendChild(reveal(calcBtn));
+      // CTA principal según el estado.
+      let btn;
+      if (!user) {
+        btn = el('button', 'drawer__btn drawer__btn--primary');
+        btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
+        btn.addEventListener('click', () => openPopup('inicio'));
+      } else if (compat) {
+        btn = el('button', 'drawer__btn drawer__btn--primary');
+        btn.append(icon('bolt', 17), document.createTextNode('Calcular pago a quincenas'));
+        btn.addEventListener('click', () => openPopup('calculadora'));
       } else {
-        const tiendaBtn = el('button', 'drawer__btn drawer__btn--outline', 'Ver tiendas afiliadas');
-        tiendaBtn.addEventListener('click', () => openPopup('buscar'));
-        body.appendChild(reveal(tiendaBtn));
+        btn = el('button', 'drawer__btn drawer__btn--ghost');
+        btn.append(icon('store', 17), document.createTextNode('Ver tiendas disponibles'));
+        btn.addEventListener('click', () => openPopup('buscar'));
       }
+      body.appendChild(reveal(btn));
 
-      drawer.appendChild(body);
+      clip.appendChild(body);
 
       // ── Footer ──
       const footer = el('div', 'drawer__footer');
-      const openBtn = el('button', 'drawer__footer-btn', 'Abrir KueskiPay →');
+      const openBtn = el('button', 'drawer__footer-btn');
+      openBtn.append(document.createTextNode('Abrir KueskiPay'), icon('arrow', 16));
       openBtn.addEventListener('click', () => openPopup('inicio'));
       footer.appendChild(reveal(openBtn));
-      drawer.appendChild(footer);
+      clip.appendChild(footer);
 
       applyPos();
       if (typeof done === 'function') done();
@@ -804,12 +812,31 @@
     closeDrawer();
   }
 
-  // ─── Helper ──────────────────────────────────────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text !== undefined) node.textContent = text;
     return node;
+  }
+
+  // Iconos SVG line-art (sin emojis). currentColor hereda del contenedor.
+  const ICONS = {
+    check:  '<path d="M20 6 9 17l-5-5"/>',
+    store:  '<path d="M4 4h16l1.2 5.4a3 3 0 0 1-5.9.6 3 3 0 0 1-6 0 3 3 0 0 1-5.9-.6z"/><path d="M5 11v9h14v-9"/><path d="M9.5 20v-5h5v5"/>',
+    wallet: '<path d="M19 7V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/><path d="M21 11h-6a2 2 0 0 0 0 4h6z"/>',
+    tag:    '<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/>',
+    arrow:  '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+    bolt:   '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    x:      '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  };
+  function icon(name, size) {
+    const s = size || 20;
+    const span = el('span', 'kp-ico');
+    span.innerHTML =
+      `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+      `stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
+    return span;
   }
 
 })();
