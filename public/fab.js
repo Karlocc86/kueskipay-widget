@@ -22,7 +22,14 @@
   const PRIMARY      = '#0d8a7a';
   const PRIMARY_DARK = '#085041';
   const PRIMARY_LITE = '#16b89f';
+  const DANGER       = '#e02f2f';
+  const DANGER_DARK  = '#8f1d1d';
+  const DANGER_LITE  = '#ff5f57';
   const STORAGE_POS  = 'kpay_fab_position';
+
+  // Afiliadas garantizadas aunque el background/BD no respondan.
+  const AFILIADAS_FALLBACK = ['amazon.com.mx', 'mercadolibre.com.mx', 'nike.com'];
+  const HOSTNAME = window.location.hostname.replace(/^www\./, '');
 
   const FAB_SIZE = 56;
   const DRAWER_W = 300;
@@ -131,9 +138,24 @@
     .fab__badge--on { transform: scale(1); }
 
     /* ── Estado: compatible vs no compatible ── */
-    .fab--off { filter: grayscale(1) brightness(.97); opacity: .6; }
+    /* Tienda no afiliada: el FAB pasa a rojo y pierde el halo/pulso. */
+    .fab--off {
+      background:
+        radial-gradient(120% 120% at 30% 22%, ${DANGER_LITE} 0%, ${DANGER} 46%, ${DANGER_DARK} 100%);
+      opacity: .88;
+      box-shadow:
+        0 6px 18px rgba(143,29,29,0.36),
+        0 2px 6px rgba(143,29,29,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.28);
+    }
     .fab--off::after { animation: none !important; }   /* sin halo */
-    .fab--off:hover { opacity: .82; }
+    .fab--off:hover {
+      opacity: 1;
+      box-shadow:
+        0 12px 28px rgba(143,29,29,0.46),
+        0 4px 10px rgba(143,29,29,0.32),
+        inset 0 1px 0 rgba(255,255,255,0.32);
+    }
 
     /* Foco de teclado visible (no en click de mouse) */
     .fab:focus-visible { outline: 3px solid rgba(13,138,122,.55); outline-offset: 3px; }
@@ -253,24 +275,8 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 15px 16px 13px;
     }
-    .drawer__header::after {
-      content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px;
-      background: var(--kp-line);
-    }
     .drawer__brand { display: flex; align-items: center; gap: 9px; }
-    .drawer__brand-img { height: 22px; width: auto; object-fit: contain; }
-    .drawer__live {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
-      color: ${PRIMARY_DARK};
-      background: rgba(13,138,122,0.08);
-      padding: 4px 9px; border-radius: 999px;
-    }
-    .drawer__live-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: ${PRIMARY}; box-shadow: 0 0 0 0 rgba(13,138,122,.6);
-      animation: kpBadgePulse 2s ease-out infinite;
-    }
+    .drawer__brand-img { height: 30px; width: auto; object-fit: contain; }
     .drawer__close {
       width: 28px; height: 28px; display: grid; place-items: center;
       background: transparent; border: none; cursor: pointer;
@@ -316,12 +322,40 @@
     .drawer__hero--ok .drawer__hero-sub { color: ${PRIMARY}; }
 
     .drawer__hero--no {
-      background: var(--kp-surface-2);
-      box-shadow: inset 0 0 0 1px var(--kp-line);
+      background: linear-gradient(135deg, rgba(224,47,47,0.10), rgba(143,29,29,0.04));
+      box-shadow: inset 0 0 0 1px rgba(224,47,47,0.16);
     }
-    .drawer__hero--no .drawer__hero-ico { background: #eef2f1; color: #8a9b95; }
-    .drawer__hero--no .drawer__hero-title { color: var(--kp-ink); }
-    .drawer__hero--no .drawer__hero-sub { color: var(--kp-ink-soft); }
+    .drawer__hero--no .drawer__hero-ico {
+      background: linear-gradient(135deg, ${DANGER_LITE}, ${DANGER});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(224,47,47,0.5);
+    }
+    .drawer__hero--no .drawer__hero-title { color: ${DANGER_DARK}; }
+    .drawer__hero--no .drawer__hero-sub { color: ${DANGER}; }
+
+    /* ── KueskiCash (tienda no afiliada) ── */
+    .drawer__cash {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 14px; border-radius: 16px;
+      background: linear-gradient(135deg, rgba(22,184,159,0.10), rgba(13,138,122,0.04));
+      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.14);
+    }
+    .drawer__cash-ico {
+      width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(13,138,122,0.5);
+    }
+    .drawer__cash-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .drawer__cash-title {
+      font-size: 13px; font-weight: 800; letter-spacing: -.1px; color: ${PRIMARY_DARK};
+    }
+    .drawer__cash-sub { font-size: 11.5px; font-weight: 500; line-height: 1.3; color: var(--kp-ink-soft); }
+    .drawer__cash-figure { display: flex; align-items: baseline; gap: 5px; margin-top: 3px; }
+    .drawer__cash-val {
+      font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: -.6px;
+      color: var(--kp-ink); font-variant-numeric: tabular-nums;
+    }
+    .drawer__cash-cur { font-size: 10.5px; font-weight: 700; color: var(--kp-ink-soft); }
 
     /* ── Crédito disponible (claro) ── */
     .drawer__credit {
@@ -421,11 +455,6 @@
     @keyframes kpHalo {
       0%   { opacity: .5; transform: scale(1); }
       100% { opacity: 0;  transform: scale(1.6); }
-    }
-    @keyframes kpBadgePulse {
-      0%   { box-shadow: 0 0 0 0 rgba(13,138,122,.55); }
-      70%  { box-shadow: 0 0 0 7px rgba(13,138,122,0); }
-      100% { box-shadow: 0 0 0 0 rgba(13,138,122,0); }
     }
     @keyframes kpRise {
       from { opacity: 0; transform: translateY(8px); }
@@ -761,7 +790,35 @@
   let nudgeHideTimer = null;
   let peekTimer = null;
 
-  function isCompat() { return window.__kueski_force_compatible !== false; }
+  // Afiliación real de la tienda. Arranca optimista (true) para no parpadear
+  // en rojo en tiendas afiliadas mientras el background responde.
+  let storeAffiliated = true;
+
+  function isCompat() {
+    // window.__kueski_force_compatible es un override manual para pruebas.
+    if (typeof window.__kueski_force_compatible === 'boolean') return window.__kueski_force_compatible;
+    return storeAffiliated;
+  }
+
+  function setAffiliated(affiliated) {
+    if (storeAffiliated === affiliated) return;
+    storeAffiliated = affiliated;
+    syncFab();
+    if (isOpen) renderDrawer();
+  }
+
+  try {
+    chrome.runtime.sendMessage({ type: 'CHECK_AFFILIATION', hostname: HOSTNAME }, (res) => {
+      if (chrome.runtime.lastError || !res) {
+        // Background no disponible: comportamiento hardcodeado con la lista fija.
+        setAffiliated(AFILIADAS_FALLBACK.some((d) => HOSTNAME.includes(d)));
+        return;
+      }
+      setAffiliated(res.affiliated !== false);
+    });
+  } catch {
+    setAffiliated(AFILIADAS_FALLBACK.some((d) => HOSTNAME.includes(d)));
+  }
 
   function showBubble(text, isNudge) {
     fabBubble.textContent = text;
@@ -825,7 +882,7 @@
     expandFab();
     clearTimeout(nudgeHideTimer);
     if (currentNudge) showBubble(currentNudge, true);
-    else showBubble(isCompat() ? 'Disponible aquí' : 'KueskiPay', false);
+    else showBubble(isCompat() ? 'Disponible aquí' : 'No afiliada · puedes pagar con Kueski', false);
   });
   fab.addEventListener('pointerleave', () => {
     if (isDragging) return;
@@ -860,7 +917,7 @@
     chrome.storage.local.get(['kpay_user', 'productoDetectado'], (res) => {
       const user      = res.kpay_user || null;
       const detectado = res.productoDetectado || null;
-      const compat    = window.__kueski_force_compatible !== false;
+      const compat    = isCompat();
       const tienda    = window.location.hostname.replace(/^www\./, '');
       const disp      = user?.credito_disponible ?? 0;
       const nombre    = user?.nombre ?? '';
@@ -882,14 +939,9 @@
       const hdr = el('div', 'drawer__header');
       const brand = el('div', 'drawer__brand');
       const bi = el('img', 'drawer__brand-img');
-      bi.src = assetUrl('kueskipay.png');
+      bi.src = assetUrl('kueskiPayconmacetita.png');
       bi.alt = 'KueskiPay';
       brand.appendChild(bi);
-      if (compat) {
-        const live = el('span', 'drawer__live');
-        live.append(el('span', 'drawer__live-dot'), document.createTextNode('Disponible'));
-        brand.appendChild(live);
-      }
       const closeBtn = el('button', 'drawer__close');
       closeBtn.setAttribute('aria-label', 'Cerrar');
       closeBtn.appendChild(icon('x', 18));
@@ -900,77 +952,127 @@
       // ── Body ──
       const body = el('div', 'drawer__body');
 
-      // HERO: ¿puedo pagar aquí? — la pregunta más importante, respondida al instante.
-      const hero = el('div', 'drawer__hero ' + (compat ? 'drawer__hero--ok' : 'drawer__hero--no'));
-      const heroIco = el('div', 'drawer__hero-ico');
-      heroIco.appendChild(icon(compat ? 'check' : 'store', 22));
-      const heroTxt = el('div', 'drawer__hero-txt');
-      heroTxt.append(
-        el('span', 'drawer__hero-title', compat ? 'Puedes pagar a quincenas' : 'Tienda no compatible'),
-        el('span', 'drawer__hero-sub', compat ? `Disponible en ${tienda}` : `${tienda} aún no acepta KueskiPay`)
-      );
-      hero.append(heroIco, heroTxt);
-      body.appendChild(reveal(hero));
-
-      body.appendChild(reveal(el('div', 'drawer__divider')));
-
-      // Crédito disponible
-      const credit = el('div', 'drawer__credit');
-      const creditIco = el('div', 'drawer__credit-ico');
-      creditIco.appendChild(icon('wallet', 20));
-      const creditMain = el('div', 'drawer__credit-main');
-      creditMain.appendChild(el('span', 'drawer__credit-lbl', 'Crédito disponible'));
-      const figure = el('div', 'drawer__credit-figure');
-      if (user) {
-        figure.append(
-          el('span', 'drawer__credit-val', `$${disp.toLocaleString('es-MX')}`),
-          el('span', 'drawer__credit-cur', 'MXN')
+      if (compat) {
+        // HERO: ¿puedo pagar aquí? — la pregunta más importante, respondida al instante.
+        const hero = el('div', 'drawer__hero drawer__hero--ok');
+        const heroIco = el('div', 'drawer__hero-ico');
+        heroIco.appendChild(icon('check', 22));
+        const heroTxt = el('div', 'drawer__hero-txt');
+        heroTxt.append(
+          el('span', 'drawer__hero-title', 'Puedes pagar a quincenas'),
+          el('span', 'drawer__hero-sub', `Disponible en ${tienda}`)
         );
-      } else {
-        figure.appendChild(el('span', 'drawer__credit-val', 'Inicia sesión'));
-      }
-      creditMain.appendChild(figure);
-      if (nombre) creditMain.appendChild(el('span', 'drawer__credit-name', `Hola, ${nombre.split(' ')[0]}`));
-      credit.append(creditIco, creditMain);
-      body.appendChild(reveal(credit));
+        hero.append(heroIco, heroTxt);
+        body.appendChild(reveal(hero));
 
-      // Producto detectado (solo si la tienda es compatible)
-      if (compat && producto) {
-        const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
-        const cuota = raw > 0
-          ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
-          : '4 quincenas';
         body.appendChild(reveal(el('div', 'drawer__divider')));
-        const pc = el('div', 'drawer__product');
-        const tag = el('span', 'drawer__product-tag');
-        tag.append(icon('tag', 12), document.createTextNode('Producto detectado'));
-        pc.appendChild(tag);
-        pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
-        const pr = el('div', 'drawer__product-row');
-        pr.append(
-          el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
-          el('span', 'drawer__product-quin', cuota)
-        );
-        pc.appendChild(pr);
-        body.appendChild(reveal(pc));
-      }
 
-      // CTA principal según el estado.
-      let btn;
-      if (!user) {
-        btn = el('button', 'drawer__btn drawer__btn--primary');
-        btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
-        btn.addEventListener('click', () => openPopup('inicio'));
-      } else if (compat) {
-        btn = el('button', 'drawer__btn drawer__btn--primary');
-        btn.append(icon('bolt', 17), document.createTextNode('Calcular pago a quincenas'));
-        btn.addEventListener('click', () => openPopup('calculadora'));
+        // Crédito disponible
+        const credit = el('div', 'drawer__credit');
+        const creditIco = el('div', 'drawer__credit-ico');
+        creditIco.appendChild(icon('wallet', 20));
+        const creditMain = el('div', 'drawer__credit-main');
+        creditMain.appendChild(el('span', 'drawer__credit-lbl', 'Crédito disponible'));
+        const figure = el('div', 'drawer__credit-figure');
+        if (user) {
+          figure.append(
+            el('span', 'drawer__credit-val', `$${disp.toLocaleString('es-MX')}`),
+            el('span', 'drawer__credit-cur', 'MXN')
+          );
+        } else {
+          figure.appendChild(el('span', 'drawer__credit-val', 'Inicia sesión'));
+        }
+        creditMain.appendChild(figure);
+        if (nombre) creditMain.appendChild(el('span', 'drawer__credit-name', `Hola, ${nombre.split(' ')[0]}`));
+        credit.append(creditIco, creditMain);
+        body.appendChild(reveal(credit));
+
+        // Producto detectado
+        if (producto) {
+          const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
+          const cuota = raw > 0
+            ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
+            : '4 quincenas';
+          body.appendChild(reveal(el('div', 'drawer__divider')));
+          const pc = el('div', 'drawer__product');
+          const tag = el('span', 'drawer__product-tag');
+          tag.append(icon('tag', 12), document.createTextNode('Producto detectado'));
+          pc.appendChild(tag);
+          pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
+          const pr = el('div', 'drawer__product-row');
+          pr.append(
+            el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
+            el('span', 'drawer__product-quin', cuota)
+          );
+          pc.appendChild(pr);
+          body.appendChild(reveal(pc));
+        }
+
+        // CTA principal según el estado.
+        let btn;
+        if (!user) {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        } else {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(icon('bolt', 17), document.createTextNode('Calcular pago a quincenas'));
+          btn.addEventListener('click', () => openPopup('calculadora'));
+        }
+        body.appendChild(reveal(btn));
       } else {
-        btn = el('button', 'drawer__btn drawer__btn--ghost');
-        btn.append(icon('store', 17), document.createTextNode('Ver tiendas disponibles'));
-        btn.addEventListener('click', () => openPopup('buscar'));
+        // ── Tienda NO afiliada: experiencia alterna ──
+        const hero = el('div', 'drawer__hero drawer__hero--no');
+        const heroIco = el('div', 'drawer__hero-ico');
+        heroIco.appendChild(icon('store', 22));
+        const heroTxt = el('div', 'drawer__hero-txt');
+        heroTxt.append(
+          el('span', 'drawer__hero-title', 'Tienda no disponible'),
+          el('span', 'drawer__hero-sub', '¡Pero tienes opciones!')
+        );
+        hero.append(heroIco, heroTxt);
+        body.appendChild(reveal(hero));
+
+        // Pitch KueskiCash con el saldo del usuario.
+        const cash = el('div', 'drawer__cash');
+        const cashIco = el('div', 'drawer__cash-ico');
+        cashIco.appendChild(icon('wallet', 20));
+        const cashMain = el('div', 'drawer__cash-main');
+        cashMain.append(
+          el('span', 'drawer__cash-title', 'Paga con tu tarjeta KueskiCash'),
+          el('span', 'drawer__cash-sub', `${tienda} no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`)
+        );
+        const cashFigure = el('div', 'drawer__cash-figure');
+        if (user) {
+          cashFigure.append(
+            el('span', 'drawer__cash-val', `$${disp.toLocaleString('es-MX')}`),
+            el('span', 'drawer__cash-cur', 'MXN disponibles')
+          );
+        } else {
+          cashFigure.appendChild(el('span', 'drawer__cash-val', 'Inicia sesión'));
+        }
+        cashMain.appendChild(cashFigure);
+        cash.append(cashIco, cashMain);
+        body.appendChild(reveal(cash));
+
+        // CTAs: usar la tarjeta o explorar tiendas afiliadas.
+        let btn;
+        if (!user) {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        } else {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(icon('wallet', 17), document.createTextNode('Usar mi tarjeta KueskiCash'));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        }
+        body.appendChild(reveal(btn));
+
+        const ghost = el('button', 'drawer__btn drawer__btn--ghost');
+        ghost.append(icon('store', 17), document.createTextNode('Ver tiendas afiliadas'));
+        ghost.addEventListener('click', () => openPopup('buscar'));
+        body.appendChild(reveal(ghost));
       }
-      body.appendChild(reveal(btn));
 
       clip.appendChild(body);
 
