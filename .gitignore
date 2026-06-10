@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
+CLAUDE.md
 # Environment variables (never commit secrets)
 .env
 .env.*

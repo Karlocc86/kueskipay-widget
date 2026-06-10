@@ -52,7 +52,17 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
 
   const faqs = [
     { q: '¿Cómo pago mi próxima cuota?',
-      a: 'El cobro es automático en la tarjeta o cuenta que registraste. También puedes adelantar el pago desde Historial → "Pagar ahora".' },
+      a: {
+        items: [
+          'Pago de servicio desde la aplicación móvil BBVA.',
+          'Practicaja BBVA.',
+          'Transferencias desde otros bancos.',
+          'Tiendas afiliadas.',
+          'Tiendas Oxxo.',
+        ],
+        note: 'Ten en cuenta que no hay cargos o penalizaciones por pagos anticipados y si lo haces, ¡vas a pagar menos intereses! Consulta tu saldo, las fechas de pago y las referencias de los distintos métodos de pago, en tu perfil de Kueski o por WhatsApp a través de nuestro asistente virtual Kike.',
+      },
+    },
     { q: '¿Puedo cambiar mi método de pago?',
       a: 'Sí. Ve a Ajustes → Métodos de pago para agregar, editar o eliminar tu tarjeta o cuenta.' },
     { q: '¿Qué pasa si pago tarde?',
@@ -92,11 +102,11 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
           <section className="settings-section">
             <span className="hist-eyebrow">Otros canales</span>
             <div className="support-channels">
-              <a className="support-channel" href="https://wa.me/5215512345678" target="_blank" rel="noopener noreferrer">
+              <a className="support-channel" href="https://wa.link/xbcubn" target="_blank" rel="noopener noreferrer">
                 <span className="support-channel__icon support-channel__icon--wa"><IconWhatsapp /></span>
                 <span className="support-channel__body">
                   <span className="support-channel__label">WhatsApp</span>
-                  <span className="support-channel__value">55 1234 5678</span>
+                  <span className="support-channel__value">800 224 2264</span>
                 </span>
                 <span className="support-channel__chev"><IconChevron /></span>
               </a>
@@ -112,7 +122,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
                 <span className="support-channel__icon support-channel__icon--ml"><IconMail /></span>
                 <span className="support-channel__body">
                   <span className="support-channel__label">Correo</span>
-                  <span className="support-channel__value">ayuda@kueski.com</span>
+                  <span className="support-channel__value">soporte@kueski.com</span>
                 </span>
                 <span className="support-channel__chev"><IconChevron /></span>
               </a>
