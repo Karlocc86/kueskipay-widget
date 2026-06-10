@@ -75,7 +75,7 @@ async function showBrowserNotification(notification) {
 
 function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
-  const [brand, setBrand] = useState('kueski')
+  const [brand, setBrand] = useState('kueskipay')
   const [showSettings, setShowSettings] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -85,9 +85,9 @@ function Dashboard({ usuario, onLogout }) {
   const [tiendas, setTiendas] = useState([])
   const [historialCrediticio, setHistorialCrediticio] = useState(null)
   const [historialCompras, setHistorialCompras] = useState([])
-  // NOTE: el valor detectado no se consume aún (el tab usa isCompatible={true});
-  // se conserva la detección para re-conectarla a la UI más adelante.
-  const [, setTiendaCompatible] = useState(false)
+  // Optimista: en dev (sin chrome.tabs) el efecto retorna temprano y se muestra
+  // la vista normal; en la extensión la detección lo corrige enseguida.
+  const [tiendaCompatible, setTiendaCompatible] = useState(true)
   const [showTutorial, setShowTutorial] = useState(false)
 
   const addTestNotification = useCallback((channel) => {
@@ -271,7 +271,7 @@ function Dashboard({ usuario, onLogout }) {
       )}
 
       <main className="dashboard__content" data-tour="content">
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} tiendas={tiendas} />}
+        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} tiendas={tiendas} tiendaCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuario} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}

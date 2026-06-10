@@ -358,31 +358,65 @@ export function TabInicio({ usuario, isCompatible, onVerTiendas }) {
 }
 
 // ─── Tab: Inicio (KueskiPay – saldo + tiendas con cashback) ───────────────────
-export function TabInicioKueski({ usuario, tiendas = [] }) {
+// Tarjeta de saldo; `cash` la pinta verde KueskiCash (tienda no afiliada).
+function BalanceCard({ usuario, cash = false }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const linea = disponible + adeudo
   const pctUso = linea > 0 ? Math.min(100, Math.round((adeudo / linea) * 100)) : 0
 
   return (
-    <div className="inicio inicio--kueski">
-      <div className="kpay-balance">
-        <div className="kpay-balance__deco" aria-hidden="true" />
-        <div className="kpay-balance__top">
-          <span className="kpay-balance__lbl">Saldo para compras</span>
-          <span className="kpay-balance__mark">kueski<strong>pay</strong></span>
-        </div>
-        <div className="kpay-balance__figure">
-          <span className="kpay-balance__amount">${disponible.toLocaleString('es-MX')}</span>
-          <span className="kpay-balance__cur">MXN</span>
-        </div>
-        <div className="kpay-balance__bar" role="img" aria-label={`${pctUso}% de tu línea en uso`}>
-          <div className="kpay-balance__bar-fill" style={{ width: `${pctUso}%` }} />
-        </div>
-        <span className="kpay-balance__meta">
-          ${adeudo.toLocaleString('es-MX')} en uso · línea de ${linea.toLocaleString('es-MX')}
-        </span>
+    <div className={`kpay-balance ${cash ? 'kpay-balance--cash' : ''}`}>
+      <div className="kpay-balance__deco" aria-hidden="true" />
+      <div className="kpay-balance__top">
+        <span className="kpay-balance__lbl">{cash ? 'Saldo KueskiCash' : 'Saldo para compras'}</span>
+        <span className="kpay-balance__mark">kueski<strong>{cash ? 'cash' : 'pay'}</strong></span>
       </div>
+      <div className="kpay-balance__figure">
+        <span className="kpay-balance__amount">${disponible.toLocaleString('es-MX')}</span>
+        <span className="kpay-balance__cur">MXN</span>
+      </div>
+      <div className="kpay-balance__bar" role="img" aria-label={`${pctUso}% de tu línea en uso`}>
+        <div className="kpay-balance__bar-fill" style={{ width: `${pctUso}%` }} />
+      </div>
+      <span className="kpay-balance__meta">
+        ${adeudo.toLocaleString('es-MX')} en uso · línea de ${linea.toLocaleString('es-MX')}
+      </span>
+    </div>
+  )
+}
+
+export function TabInicioKueski({ usuario, tiendas = [], tiendaCompatible = true, onVerTiendas }) {
+  return (
+    <div className="inicio inicio--kueski">
+      {tiendaCompatible ? (
+        <BalanceCard usuario={usuario} />
+      ) : (
+        <>
+          <div className="kpay-unavail">
+            <span className="kpay-unavail__icon"><IconStore /></span>
+            <span className="kpay-unavail__body">
+              <span className="kpay-unavail__title">Tu crédito KueskiPay no está disponible en esta tienda</span>
+              <span className="kpay-unavail__sub">
+                Tranquilo, tienes plan B: tu tarjeta KueskiCash funciona en cualquier comercio en línea.
+              </span>
+            </span>
+          </div>
+
+          <BalanceCard usuario={usuario} cash />
+
+          <div className="kpay-actions">
+            <button className="kpay-actions__primary">
+              <IconMoney />
+              <span>Pagar con KueskiCash</span>
+            </button>
+            <button className="kpay-actions__ghost" onClick={onVerTiendas}>
+              <IconStore />
+              <span>Ver tiendas afiliadas</span>
+            </button>
+          </div>
+        </>
+      )}
 
       <h3 className="cashback__titulo">Tiendas con cashback</h3>
       <div className="cashback__carrusel">
