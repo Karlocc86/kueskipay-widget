@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../supabaseClient'
 import {
   IconBack, IconClose, IconChat, IconWhatsapp, IconChevron, IconPhone, IconMail,
-  IconAlert, IconCheck, IconUser, IconCard, IconShield, IconBellSm, IconGlobe, IconHelp, IconLogout,
+  IconAlert, IconCheck, IconUser, IconCard, IconShield, IconBellSm, IconGlobe, IconHelp, IconLogout, IconPlay,
 } from '../icons'
 
-export default function SettingsDropdown({ usuario, onLogout, onClose }) {
+export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTutorial }) {
   const ref = useRef()
   const bodyRef = useRef()
   const [view, setView] = useState('menu')
@@ -209,8 +209,13 @@ export default function SettingsDropdown({ usuario, onLogout, onClose }) {
               <span className="settings-item__label">Centro de Ayuda</span>
               <span className="settings-item__chev"><IconChevron /></span>
             </li>
+            <li className="settings-item" onClick={() => onStartTutorial?.()} role="button">
+              <span className="settings-item__icon"><IconPlay /></span>
+              <span className="settings-item__label">Ver tutorial</span>
+              <span className="settings-item__chev"><IconChevron /></span>
+            </li>
           </ul>
-          <p className="settings-section__hint">Chat, llamada, WhatsApp y preguntas frecuentes</p>
+          <p className="settings-section__hint">Chat, llamada, WhatsApp y un tour guiado de la app</p>
         </section>
 
         <button className="settings-logout" onClick={handleLogout}>

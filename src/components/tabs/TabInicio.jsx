@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { IconMoney, IconCalendar, IconStore, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
+import { IconMoney, IconCalendar, IconStore, IconCalc, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
 
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ disponible, total, isCompatible }) {
@@ -356,31 +356,76 @@ export function TabInicio({ usuario, isCompatible, onVerTiendas }) {
   )
 }
 
-// ─── Tab: Inicio (Kueski – préstamos personales) ─────────────────────────────
-export function TabInicioKueski({ usuario }) {
+// ─── Tab: Inicio (KueskiPay – compra ahora, paga a quincenas) ─────────────────
+// Próxima fecha de pago quincenal: día 15 o último día del mes, lo que siga.
+function proximaQuincena(hoy = new Date()) {
+  return hoy.getDate() < 15
+    ? new Date(hoy.getFullYear(), hoy.getMonth(), 15)
+    : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
+}
+
+export function TabInicioKueski({ usuario, onCalcular, onVerTiendas }) {
+  const nombre = (usuario?.nombre ?? '').split(' ')[0] || 'usuario'
+  const disponible = usuario?.credito_disponible ?? 0
+  const adeudo = usuario?.adeudo_proximo ?? 0
+  const linea = disponible + adeudo
+  const pctUso = linea > 0 ? Math.min(100, Math.round((adeudo / linea) * 100)) : 0
+  const fechaPago = proximaQuincena().toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
+
   return (
     <div className="inicio inicio--kueski">
       <div className="inicio-k__hero">
-        <span className="inicio-k__eyebrow">Préstamos personales</span>
-        <h2 className="inicio-k__title">
-          Hola, {(usuario?.nombre ?? '').split(' ')[0] || 'usuario'} 👋
-        </h2>
-        <p className="inicio-k__sub">Tu espacio Kueski para préstamos en efectivo.</p>
+        <span className="inicio-k__eyebrow">Compra ahora, paga a quincenas</span>
+        <h2 className="inicio-k__title">Hola, {nombre} 👋</h2>
+        <p className="inicio-k__sub">Tu saldo KueskiPay listo para usar en tiendas afiliadas.</p>
       </div>
 
-      <div className="inicio-k__placeholder">
-        <div className="inicio-k__placeholder-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00B26A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="6" width="18" height="13" rx="2" />
-            <path d="M3 10h18" />
-            <path d="M7 15h4" />
-          </svg>
+      <div className="kpay-balance">
+        <div className="kpay-balance__deco" aria-hidden="true" />
+        <div className="kpay-balance__top">
+          <span className="kpay-balance__lbl">Saldo para compras</span>
+          <span className="kpay-balance__mark">kueski<strong>pay</strong></span>
         </div>
-        <p className="inicio-k__placeholder-title">Dashboard de Kueski</p>
-        <p className="inicio-k__placeholder-sub">
-          Aquí verás tu préstamo activo, saldo, próxima cuota y opciones para solicitar un nuevo préstamo.
-        </p>
-        <span className="inicio-k__placeholder-tag">Próximamente</span>
+        <div className="kpay-balance__figure">
+          <span className="kpay-balance__amount">${disponible.toLocaleString('es-MX')}</span>
+          <span className="kpay-balance__cur">MXN</span>
+        </div>
+        <div className="kpay-balance__bar" role="img" aria-label={`${pctUso}% de tu línea en uso`}>
+          <div className="kpay-balance__bar-fill" style={{ width: `${pctUso}%` }} />
+        </div>
+        <span className="kpay-balance__meta">
+          ${adeudo.toLocaleString('es-MX')} en uso · línea de ${linea.toLocaleString('es-MX')}
+        </span>
+      </div>
+
+      {adeudo > 0 ? (
+        <div className="kpay-next">
+          <span className="kpay-next__icon"><IconCalendar /></span>
+          <span className="kpay-next__body">
+            <span className="kpay-next__lbl">Próximo pago quincenal</span>
+            <span className="kpay-next__date">{fechaPago}</span>
+          </span>
+          <span className="kpay-next__amount">${adeudo.toLocaleString('es-MX')}</span>
+        </div>
+      ) : (
+        <div className="kpay-next kpay-next--clear">
+          <span className="kpay-next__icon"><IconCalendar /></span>
+          <span className="kpay-next__body">
+            <span className="kpay-next__lbl">Estás al día</span>
+            <span className="kpay-next__date">Sin pagos pendientes</span>
+          </span>
+        </div>
+      )}
+
+      <div className="kpay-actions">
+        <button className="kpay-actions__primary" onClick={onCalcular}>
+          <IconCalc />
+          <span>Calcular una compra</span>
+        </button>
+        <button className="kpay-actions__ghost" onClick={onVerTiendas}>
+          <IconStore />
+          <span>Ver tiendas afiliadas</span>
+        </button>
       </div>
     </div>
   )

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../../supabaseClient'
 import { IconSearch } from '../icons'
+import { agruparProductosPorNombre } from '../../lib/productos'
+import { getIniciales } from '../../lib/format'
 
 export default function TabBuscar({ tiendas, busquedaInicial = '' }) {
   const [busqueda, setBusqueda] = useState(busquedaInicial)
@@ -30,21 +32,7 @@ export default function TabBuscar({ tiendas, busquedaInicial = '' }) {
     return () => clearTimeout(timer)
   }, [busqueda])
 
-  const productosAgrupados = useMemo(() => {
-    const grupos = {}
-    resultados.forEach(p => {
-      if (!grupos[p.nombre]) grupos[p.nombre] = []
-      grupos[p.nombre].push(p)
-    })
-    Object.values(grupos).forEach(arr => arr.sort((a, b) => a.precio - b.precio))
-    return grupos
-  }, [resultados])
-
-  const getIniciales = (nombre = '') => {
-    const palabras = nombre.trim().split(' ')
-    if (palabras.length === 1) return nombre.slice(0, 2).toUpperCase()
-    return (palabras[0][0] + palabras[1][0]).toUpperCase()
-  }
+  const productosAgrupados = useMemo(() => agruparProductosPorNombre(resultados), [resultados])
 
   const hayBusqueda = busqueda.trim().length > 0
 

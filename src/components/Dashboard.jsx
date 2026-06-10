@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../supabaseClient'
 import './Dashboard.css'
+import Tutorial from './Tutorial'
 
 import { IconBell, IconCalendarHeader, IconSettings, IconHome, IconCalc, IconSearch, IconChart, IconTicket } from './icons'
 import { COUPONS } from '../data/coupons'
@@ -22,6 +23,7 @@ function BrandSwitcher({ brand, onChange }) {
       type="button"
       className="brand-toggle"
       data-brand={brand}
+      data-tour="brand"
       onClick={() => onChange(next)}
       aria-label={`Cambiar a ${next === 'kueski' ? 'Kueski' : 'KueskiPay'}`}
     >
@@ -54,6 +56,34 @@ function Dashboard({ usuario, onLogout }) {
   // NOTE: el valor detectado no se consume aún (el tab usa isCompatible={true});
   // se conserva la detección para re-conectarla a la UI más adelante.
   const [, setTiendaCompatible] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+
+  // El tour se lanza solo la primera vez; después vive en Ajustes → Ver tutorial.
+  useEffect(() => {
+    const lanzarSiPrimeraVez = (done) => { if (!done) setShowTutorial(true) }
+    try {
+      chrome.storage.local.get(['kpay_tutorial_done'], (res) => lanzarSiPrimeraVez(res.kpay_tutorial_done))
+    } catch {
+      lanzarSiPrimeraVez(localStorage.getItem('kpay_tutorial_done'))
+    }
+  }, [])
+
+  const finishTutorial = useCallback(() => {
+    setShowTutorial(false)
+    try { chrome.storage.local.set({ kpay_tutorial_done: true }) } catch { /* dev sin chrome.* */ }
+    try { localStorage.setItem('kpay_tutorial_done', '1') } catch { /* storage bloqueado */ }
+  }, [])
+
+  // Cada paso del tour puede cambiar de tab o girar la moneda; también cierra
+  // cualquier panel flotante para que el spotlight apunte a lo correcto.
+  const handleTourEffect = useCallback((effect) => {
+    if (effect?.tab) setTab(effect.tab)
+    if (effect?.brand) setBrand(effect.brand)
+    setShowSettings(false)
+    setShowNotifications(false)
+    setShowCalendar(false)
+    setShowCoupons(false)
+  }, [])
 
   // Determine store compatibility from the active browser tab
   useEffect(() => {
@@ -121,7 +151,7 @@ function Dashboard({ usuario, onLogout }) {
           <img src="kueskilogo.png" alt="Kueski" className="dashboard__plant-logo" />
           <BrandSwitcher brand={brand} onChange={setBrand} />
         </div>
-        <div className="dashboard__header-icons" style={{ position: 'relative' }}>
+        <div className="dashboard__header-icons" style={{ position: 'relative' }} data-tour="quick">
           <div className="coupon-wrapper">
             <button
               className="icon-btn"
@@ -152,6 +182,7 @@ function Dashboard({ usuario, onLogout }) {
           <button
             className="icon-btn"
             aria-label="Configuración"
+            data-tour="settings"
             onClick={() => { setShowSettings((v) => !v); setShowNotifications(false); setShowCalendar(false); setShowCoupons(false) }}
           >
             <IconSettings />
@@ -177,17 +208,19 @@ function Dashboard({ usuario, onLogout }) {
           usuario={usuario}
           onLogout={onLogout}
           onClose={() => setShowSettings(false)}
+          onStartTutorial={() => { setShowSettings(false); setShowTutorial(true) }}
         />
       )}
 
       {showCalendar && (
         <PaymentsCalendar
+          usuario={usuario}
           onClose={() => setShowCalendar(false)}
         />
       )}
 
-      <main className="dashboard__content">
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} />}
+      <main className="dashboard__content" data-tour="content">
+        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} onCalcular={() => setTab('calculadora')} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuario} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}
@@ -199,6 +232,7 @@ function Dashboard({ usuario, onLogout }) {
           <button
             key={id}
             className={`nav-btn ${tab === id ? 'nav-btn--active' : ''}`}
+            data-tour={`nav-${id}`}
             onClick={() => setTab(id)}
           >
             <Icon />
@@ -206,6 +240,8 @@ function Dashboard({ usuario, onLogout }) {
           </button>
         ))}
       </nav>
+
+      {showTutorial && <Tutorial onStepEffect={handleTourEffect} onFinish={finishTutorial} />}
     </div>
   )
 }
