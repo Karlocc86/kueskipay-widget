@@ -19,10 +19,22 @@
     try { return chrome.runtime.getURL(path); } catch { return ''; }
   }
 
+  // Verde = identidad KueskiCash (tienda no afiliada).
   const PRIMARY      = '#0d8a7a';
   const PRIMARY_DARK = '#085041';
   const PRIMARY_LITE = '#16b89f';
+  // Azul = identidad KueskiPay (tienda afiliada), mismo brand-color del dashboard.
+  const BLUE         = '#1A73E8';
+  const BLUE_DARK    = '#0F4FA8';
+  const BLUE_LITE    = '#4D96F0';
+  const DANGER       = '#e02f2f';
+  const DANGER_DARK  = '#8f1d1d';
+  const DANGER_LITE  = '#ff5f57';
   const STORAGE_POS  = 'kpay_fab_position';
+
+  // Afiliadas garantizadas aunque el background/BD no respondan.
+  const AFILIADAS_FALLBACK = ['amazon.com.mx', 'mercadolibre.com.mx', 'nike.com'];
+  const HOSTNAME = window.location.hostname.replace(/^www\./, '');
 
   const FAB_SIZE = 56;
   const DRAWER_W = 300;
@@ -67,7 +79,7 @@
       height: ${FAB_SIZE}px;
       border-radius: 50%;
       background:
-        radial-gradient(120% 120% at 30% 22%, ${PRIMARY_LITE} 0%, ${PRIMARY} 46%, ${PRIMARY_DARK} 100%);
+        radial-gradient(120% 120% at 30% 22%, ${BLUE_LITE} 0%, ${BLUE} 46%, ${BLUE_DARK} 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -79,8 +91,8 @@
       border: none;
       outline: none;
       box-shadow:
-        0 6px 18px rgba(8,80,65,0.36),
-        0 2px 6px rgba(8,80,65,0.28),
+        0 6px 18px rgba(15,79,168,0.36),
+        0 2px 6px rgba(15,79,168,0.28),
         inset 0 1px 0 rgba(255,255,255,0.28);
       transition: opacity .2s ease, box-shadow .25s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
       animation: kpFabIn .56s cubic-bezier(.34,1.56,.64,1) backwards;
@@ -90,7 +102,7 @@
       position: absolute;
       inset: -5px;
       border-radius: 50%;
-      border: 2px solid ${PRIMARY};
+      border: 2px solid ${BLUE};
       opacity: 0;
       pointer-events: none;
     }
@@ -99,8 +111,8 @@
       opacity: 1;
       transform: translateY(-2px) scale(1.05);
       box-shadow:
-        0 12px 28px rgba(8,80,65,0.46),
-        0 4px 10px rgba(8,80,65,0.32),
+        0 12px 28px rgba(15,79,168,0.46),
+        0 4px 10px rgba(15,79,168,0.32),
         inset 0 1px 0 rgba(255,255,255,0.32);
     }
     .fab:active { transform: scale(0.92); }
@@ -121,7 +133,7 @@
       top: -2px; right: -2px;
       width: 19px; height: 19px;
       border-radius: 50%;
-      background: #fff; color: ${PRIMARY_DARK};
+      background: #fff; color: ${BLUE_DARK};
       display: grid; place-items: center;
       transform: scale(0);
       transition: transform .3s cubic-bezier(.34,1.56,.64,1);
@@ -131,12 +143,12 @@
     .fab__badge--on { transform: scale(1); }
 
     /* ── Estado: compatible vs no compatible ── */
-    .fab--off { filter: grayscale(1) brightness(.97); opacity: .6; }
+    /* Tienda no afiliada: mismos colores azules, sin halo; el badge muestra una X. */
     .fab--off::after { animation: none !important; }   /* sin halo */
-    .fab--off:hover { opacity: .82; }
+    .fab__badge--no { color: ${DANGER}; }
 
     /* Foco de teclado visible (no en click de mouse) */
-    .fab:focus-visible { outline: 3px solid rgba(13,138,122,.55); outline-offset: 3px; }
+    .fab:focus-visible { outline: 3px solid rgba(26,115,232,.55); outline-offset: 3px; }
 
     /* ── Pestaña: replegado contra el borde anclado ── */
     .fab--peek.fab--dock-right { transform: translateX(20px); opacity: .55; }
@@ -172,12 +184,16 @@
     .fab--dock-left  .fab__bubble::after { left: -4px; }
     .fab__bubble--show { opacity: 1; transform: translateY(-50%) translateX(0); }
     .fab__bubble--nudge {
-      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY}); color: #fff;
-      box-shadow: 0 8px 22px -4px rgba(13,138,122,.5);
+      background: linear-gradient(135deg, ${BLUE_LITE}, ${BLUE}); color: #fff;
+      box-shadow: 0 8px 22px -4px rgba(26,115,232,.5);
     }
 
-    /* ── Panel (claro minimalista) ── */
+    /* ── Panel (claro minimalista) ──
+       Acento por estado: azul KueskiPay (afiliada) / verde KueskiCash (no afiliada). */
     .drawer {
+      --acc: ${BLUE};
+      --acc-dark: ${BLUE_DARK};
+      --acc-lite: ${BLUE_LITE};
       position: fixed;
       width: ${DRAWER_W}px;
       max-width: calc(100vw - ${MARGIN * 2}px);
@@ -209,6 +225,11 @@
       opacity: 1; transform: scale(1) translateY(0); pointer-events: all;
       visibility: visible;
       transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1), visibility 0s;
+    }
+    .drawer--no {
+      --acc: ${PRIMARY};
+      --acc-dark: ${PRIMARY_DARK};
+      --acc-lite: ${PRIMARY_LITE};
     }
 
     /* Conector (beak) que ancla el panel al FAB */
@@ -253,24 +274,8 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 15px 16px 13px;
     }
-    .drawer__header::after {
-      content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px;
-      background: var(--kp-line);
-    }
     .drawer__brand { display: flex; align-items: center; gap: 9px; }
-    .drawer__brand-img { height: 22px; width: auto; object-fit: contain; }
-    .drawer__live {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;
-      color: ${PRIMARY_DARK};
-      background: rgba(13,138,122,0.08);
-      padding: 4px 9px; border-radius: 999px;
-    }
-    .drawer__live-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: ${PRIMARY}; box-shadow: 0 0 0 0 rgba(13,138,122,.6);
-      animation: kpBadgePulse 2s ease-out infinite;
-    }
+    .drawer__brand-img { height: 30px; width: auto; object-fit: contain; }
     .drawer__close {
       width: 28px; height: 28px; display: grid; place-items: center;
       background: transparent; border: none; cursor: pointer;
@@ -285,7 +290,7 @@
       overflow-y: auto;
     }
     .drawer__body::-webkit-scrollbar { width: 6px; }
-    .drawer__body::-webkit-scrollbar-thumb { background: rgba(13,138,122,.22); border-radius: 6px; }
+    .drawer__body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--acc) 25%, transparent); border-radius: 6px; }
 
     /* ── HERO de compatibilidad: responde "¿puedo pagar aquí?" ── */
     .drawer__hero {
@@ -305,47 +310,68 @@
     .drawer__hero-sub { font-size: 11.5px; font-weight: 500; line-height: 1.25; }
 
     .drawer__hero--ok {
-      background: linear-gradient(135deg, rgba(22,184,159,0.12), rgba(13,138,122,0.05));
-      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.14);
+      background: linear-gradient(135deg, rgba(77,150,240,0.12), rgba(26,115,232,0.05));
+      box-shadow: inset 0 0 0 1px rgba(26,115,232,0.14);
     }
     .drawer__hero--ok .drawer__hero-ico {
-      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY});
-      color: #fff; box-shadow: 0 6px 14px -4px rgba(13,138,122,0.5);
+      background: linear-gradient(135deg, ${BLUE_LITE}, ${BLUE});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(26,115,232,0.5);
     }
-    .drawer__hero--ok .drawer__hero-title { color: ${PRIMARY_DARK}; }
-    .drawer__hero--ok .drawer__hero-sub { color: ${PRIMARY}; }
+    .drawer__hero--ok .drawer__hero-title { color: ${BLUE_DARK}; }
+    .drawer__hero--ok .drawer__hero-sub { color: ${BLUE}; }
 
     .drawer__hero--no {
+      background: linear-gradient(135deg, rgba(224,47,47,0.10), rgba(143,29,29,0.04));
+      box-shadow: inset 0 0 0 1px rgba(224,47,47,0.16);
+    }
+    .drawer__hero--no .drawer__hero-ico {
+      background: linear-gradient(135deg, ${DANGER_LITE}, ${DANGER});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(224,47,47,0.5);
+    }
+    .drawer__hero--no .drawer__hero-title { color: ${DANGER_DARK}; }
+    .drawer__hero--no .drawer__hero-sub { color: ${DANGER}; }
+
+    /* ── Tarjeta de saldo (mismo diseño que .kpay-balance del dashboard) ──
+       Azul "Saldo para compras" en afiliadas; verde "Saldo KueskiCash" si no. */
+    .drawer__saldo {
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 14px 15px 13px; border-radius: 16px; color: #fff;
+      background: linear-gradient(135deg, var(--acc) 0%, var(--acc-dark) 100%);
+      box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--acc) 55%, transparent);
+    }
+    .drawer__saldo-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .drawer__saldo-lbl {
+      font-size: 9.5px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase;
+      opacity: .94;
+    }
+    .drawer__saldo-mark { font-size: 12.5px; font-weight: 300; letter-spacing: -.2px; opacity: .95; }
+    .drawer__saldo-mark strong { font-weight: 800; }
+    .drawer__saldo-figure { display: flex; align-items: baseline; gap: 6px; }
+    .drawer__saldo-val {
+      font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -.8px;
+      font-variant-numeric: tabular-nums;
+    }
+    .drawer__saldo-cur { font-size: 11px; font-weight: 700; opacity: .85; }
+    .drawer__saldo-bar {
+      height: 5px; border-radius: 999px; background: rgba(255,255,255,0.28); overflow: hidden;
+    }
+    .drawer__saldo-bar-fill {
+      height: 100%; border-radius: 999px; background: #fff; width: 0;
+      transition: width .8s cubic-bezier(.22,1,.36,1);
+    }
+    .drawer__saldo-meta { font-size: 10.5px; font-weight: 600; opacity: .88; }
+
+    /* Nota amigable arriba de la tarjeta de saldo (no afiliada) */
+    .drawer__note {
+      padding: 11px 13px; border-radius: 14px;
       background: var(--kp-surface-2);
       box-shadow: inset 0 0 0 1px var(--kp-line);
     }
-    .drawer__hero--no .drawer__hero-ico { background: #eef2f1; color: #8a9b95; }
-    .drawer__hero--no .drawer__hero-title { color: var(--kp-ink); }
-    .drawer__hero--no .drawer__hero-sub { color: var(--kp-ink-soft); }
-
-    /* ── Crédito disponible (claro) ── */
-    .drawer__credit {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 4px 2px;
+    .drawer__note-txt {
+      font-size: 11.5px; font-weight: 500; line-height: 1.35;
+      color: var(--kp-ink-soft);
     }
-    .drawer__credit-ico {
-      width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
-      display: grid; place-items: center;
-      background: var(--kp-surface-2); color: ${PRIMARY};
-      box-shadow: inset 0 0 0 1px var(--kp-line);
-    }
-    .drawer__credit-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .drawer__credit-lbl {
-      font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
-      color: var(--kp-ink-mute);
-    }
-    .drawer__credit-figure { display: flex; align-items: baseline; gap: 6px; }
-    .drawer__credit-val {
-      font-size: 27px; font-weight: 800; line-height: 1; letter-spacing: -1px;
-      color: var(--kp-ink); font-variant-numeric: tabular-nums;
-    }
-    .drawer__credit-cur { font-size: 11px; font-weight: 700; color: var(--kp-ink-soft); }
-    .drawer__credit-name { font-size: 11.5px; font-weight: 600; color: var(--kp-ink-soft); margin-top: 1px; }
 
     .drawer__divider { height: 1px; background: var(--kp-line); margin: 1px 0; }
 
@@ -353,7 +379,7 @@
     .drawer__product { padding: 2px; }
     .drawer__product-tag {
       font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
-      color: ${PRIMARY}; display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
+      color: var(--acc); display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
     }
     .drawer__product-name {
       font-size: 13px; font-weight: 700; color: var(--kp-ink); letter-spacing: -.1px;
@@ -365,8 +391,8 @@
       font-variant-numeric: tabular-nums;
     }
     .drawer__product-quin {
-      font-size: 11px; font-weight: 800; color: ${PRIMARY_DARK}; white-space: nowrap;
-      background: rgba(13,138,122,.1); padding: 5px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; color: var(--acc-dark); white-space: nowrap;
+      background: color-mix(in srgb, var(--acc) 10%, transparent); padding: 5px 10px; border-radius: 999px;
       display: inline-flex; align-items: center; gap: 5px;
     }
 
@@ -382,19 +408,19 @@
     }
     .drawer__btn--primary {
       color: #fff;
-      background: linear-gradient(135deg, ${PRIMARY_LITE} 0%, ${PRIMARY} 62%, ${PRIMARY_DARK} 100%);
-      box-shadow: 0 8px 18px -5px rgba(13,138,122,0.5), inset 0 1px 0 rgba(255,255,255,0.22);
+      background: linear-gradient(135deg, var(--acc-lite) 0%, var(--acc) 62%, var(--acc-dark) 100%);
+      box-shadow: 0 8px 18px -5px color-mix(in srgb, var(--acc) 50%, transparent), inset 0 1px 0 rgba(255,255,255,0.22);
     }
     .drawer__btn--primary::after {
       content: ''; position: absolute; inset: 0;
       background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%);
       transform: translateX(-120%); transition: transform .55s ease;
     }
-    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -7px rgba(13,138,122,0.58), inset 0 1px 0 rgba(255,255,255,0.22); }
+    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -7px color-mix(in srgb, var(--acc) 58%, transparent), inset 0 1px 0 rgba(255,255,255,0.22); }
     .drawer__btn--primary:hover::after { transform: translateX(120%); }
     .drawer__btn--primary:active { transform: translateY(0) scale(.985); }
     .drawer__btn--ghost {
-      background: var(--kp-surface-2); color: ${PRIMARY_DARK};
+      background: var(--kp-surface-2); color: var(--acc-dark);
       box-shadow: inset 0 0 0 1px var(--kp-line);
     }
     .drawer__btn--ghost:hover { background: #eef5f3; transform: translateY(-1px); }
@@ -408,7 +434,7 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       transition: color .15s, background .15s;
     }
-    .drawer__footer-btn:hover { color: ${PRIMARY}; background: var(--kp-surface-2); }
+    .drawer__footer-btn:hover { color: var(--acc); background: var(--kp-surface-2); }
     .drawer__footer-btn svg { transition: transform .2s ease; }
     .drawer__footer-btn:hover svg { transform: translateX(3px); }
 
@@ -421,11 +447,6 @@
     @keyframes kpHalo {
       0%   { opacity: .5; transform: scale(1); }
       100% { opacity: 0;  transform: scale(1.6); }
-    }
-    @keyframes kpBadgePulse {
-      0%   { box-shadow: 0 0 0 0 rgba(13,138,122,.55); }
-      70%  { box-shadow: 0 0 0 7px rgba(13,138,122,0); }
-      100% { box-shadow: 0 0 0 0 rgba(13,138,122,0); }
     }
     @keyframes kpRise {
       from { opacity: 0; transform: translateY(8px); }
@@ -455,13 +476,17 @@
   if (logoUrl) fabImg.src = logoUrl;
   fab.appendChild(fabImg);
 
-  // Badge con check (SVG inline; no usa icon() para evitar TDZ de ICONS en este punto).
+  // Badge de estado: check (afiliada) o X (no afiliada).
+  // SVG inline; no usa icon() para evitar TDZ de ICONS en este punto.
+  const BADGE_SVG = (path) =>
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" ' +
+    `stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+  const BADGE_CHECK = BADGE_SVG('<path d="M20 6 9 17l-5-5"/>');
+  const BADGE_X     = BADGE_SVG('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>');
   const fabBadge = document.createElement('span');
   fabBadge.className = 'fab__badge';
   fabBadge.setAttribute('aria-hidden', 'true');
-  fabBadge.innerHTML =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  fabBadge.innerHTML = BADGE_CHECK;
   fab.appendChild(fabBadge);
 
   // Globo lateral: etiqueta al hover + nudge de producto (decorativo).
@@ -761,7 +786,35 @@
   let nudgeHideTimer = null;
   let peekTimer = null;
 
-  function isCompat() { return window.__kueski_force_compatible !== false; }
+  // Afiliación real de la tienda. Arranca optimista (true) para no parpadear
+  // en rojo en tiendas afiliadas mientras el background responde.
+  let storeAffiliated = true;
+
+  function isCompat() {
+    // window.__kueski_force_compatible es un override manual para pruebas.
+    if (typeof window.__kueski_force_compatible === 'boolean') return window.__kueski_force_compatible;
+    return storeAffiliated;
+  }
+
+  function setAffiliated(affiliated) {
+    if (storeAffiliated === affiliated) return;
+    storeAffiliated = affiliated;
+    syncFab();
+    if (isOpen) renderDrawer();
+  }
+
+  try {
+    chrome.runtime.sendMessage({ type: 'CHECK_AFFILIATION', hostname: HOSTNAME }, (res) => {
+      if (chrome.runtime.lastError || !res) {
+        // Background no disponible: comportamiento hardcodeado con la lista fija.
+        setAffiliated(AFILIADAS_FALLBACK.some((d) => HOSTNAME.includes(d)));
+        return;
+      }
+      setAffiliated(res.affiliated !== false);
+    });
+  } catch {
+    setAffiliated(AFILIADAS_FALLBACK.some((d) => HOSTNAME.includes(d)));
+  }
 
   function showBubble(text, isNudge) {
     fabBubble.textContent = text;
@@ -785,7 +838,10 @@
     chrome.storage.local.get(['productoDetectado'], (res) => {
       const d = res.productoDetectado;
       const tienda = window.location.hostname.replace(/^www\./, '');
-      const fresh = d && d.url === tienda && (Date.now() - (d.ts || 0) < FRESCO_MS) ? d : null;
+      // Solo cuenta si estamos parados en la página EXACTA del producto
+      // (no en el home/exploración del mismo dominio).
+      const fresh = d && d.url === tienda && d.href === window.location.href &&
+        (Date.now() - (d.ts || 0) < FRESCO_MS) ? d : null;
       if (fresh && isCompat()) {
         const raw = parseFloat(String(fresh.precio).replace(/,/g, '')) || 0;
         currentNudge = raw > 0
@@ -808,7 +864,10 @@
     const compat = isCompat();
     fab.classList.toggle('fab--ready', compat);
     fab.classList.toggle('fab--off', !compat);
-    fabBadge.classList.toggle('fab__badge--on', compat);
+    // Badge siempre visible: check azul (afiliada) o X roja (no afiliada).
+    fabBadge.innerHTML = compat ? BADGE_CHECK : BADGE_X;
+    fabBadge.classList.toggle('fab__badge--no', !compat);
+    fabBadge.classList.add('fab__badge--on');
     if (!compat) fab.classList.remove('fab--pulse');
     else if (!isOpen) fab.classList.add('fab--pulse');
     fab.setAttribute('aria-label',
@@ -825,7 +884,7 @@
     expandFab();
     clearTimeout(nudgeHideTimer);
     if (currentNudge) showBubble(currentNudge, true);
-    else showBubble(isCompat() ? 'Disponible aquí' : 'KueskiPay', false);
+    else showBubble(isCompat() ? 'Disponible aquí' : 'No afiliada · puedes pagar con Kueski', false);
   });
   fab.addEventListener('pointerleave', () => {
     if (isDragging) return;
@@ -854,20 +913,77 @@
     });
   } catch {}
 
+  // Navegación SPA: al cambiar la URL el producto guardado deja de pertenecer a
+  // esta página, así que se recalcula el nudge (y el drawer si está abierto).
+  // Mismo patrón que content_script.js; ambos parches conviven encadenados.
+  let urlActual = window.location.href;
+  const onUrlChange = () => {
+    if (window.location.href === urlActual) return;
+    urlActual = window.location.href;
+    updateNudge(false);
+    if (isOpen) renderDrawer();
+  };
+  const _push = history.pushState;
+  history.pushState = function (...args) { _push.apply(this, args); onUrlChange(); };
+  const _replace = history.replaceState;
+  history.replaceState = function (...args) { _replace.apply(this, args); onUrlChange(); };
+  window.addEventListener('popstate', onUrlChange);
+
   // ─── Render del contenido ─────────────────────────────────────────────────────
   function renderDrawer(done) {
     if (!isContextValid()) { host.remove(); return; }
     chrome.storage.local.get(['kpay_user', 'productoDetectado'], (res) => {
       const user      = res.kpay_user || null;
       const detectado = res.productoDetectado || null;
-      const compat    = window.__kueski_force_compatible !== false;
+      const compat    = isCompat();
       const tienda    = window.location.hostname.replace(/^www\./, '');
       const disp      = user?.credito_disponible ?? 0;
-      const nombre    = user?.nombre ?? '';
+      const adeudo    = user?.adeudo_proximo ?? 0;
+      const linea     = disp + adeudo;
+      const pctUso    = linea > 0 ? Math.min(100, Math.round((adeudo / linea) * 100)) : 0;
 
-      // El producto solo es válido si pertenece a ESTA tienda y es reciente.
+      // Acento del panel según el estado (azul KueskiPay / verde KueskiCash).
+      drawer.classList.toggle('drawer--no', !compat);
+
+      // Tarjeta de saldo, mismo diseño que el dashboard de KueskiPay.
+      const buildSaldo = (lbl, markStrong, markLight) => {
+        const card = el('div', 'drawer__saldo');
+        const top = el('div', 'drawer__saldo-top');
+        const mark = el('span', 'drawer__saldo-mark');
+        mark.append(Object.assign(el('strong'), { textContent: markStrong }), document.createTextNode(markLight));
+        top.append(el('span', 'drawer__saldo-lbl', lbl), mark);
+        card.appendChild(top);
+
+        const figure = el('div', 'drawer__saldo-figure');
+        if (user) {
+          figure.append(
+            el('span', 'drawer__saldo-val', `$${disp.toLocaleString('es-MX')}`),
+            el('span', 'drawer__saldo-cur', 'MXN')
+          );
+          card.appendChild(figure);
+
+          const bar = el('div', 'drawer__saldo-bar');
+          const fill = el('div', 'drawer__saldo-bar-fill');
+          bar.appendChild(fill);
+          card.appendChild(bar);
+          // La barra anima desde 0 una vez insertada en el DOM.
+          requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = `${pctUso}%`; }));
+
+          card.appendChild(el('span', 'drawer__saldo-meta',
+            `$${adeudo.toLocaleString('es-MX')} en uso · línea de $${linea.toLocaleString('es-MX')}`));
+        } else {
+          figure.appendChild(el('span', 'drawer__saldo-val', 'Inicia sesión'));
+          card.appendChild(figure);
+          card.appendChild(el('span', 'drawer__saldo-meta', 'Entra para ver tu saldo disponible'));
+        }
+        return card;
+      };
+
+      // El producto solo es válido si estamos en SU página exacta y es reciente
+      // (en el home o explorando el mismo dominio no se muestra).
       const FRESCO_MS = 60 * 60 * 1000;
       const producto = detectado && detectado.url === tienda &&
+        detectado.href === window.location.href &&
         (Date.now() - (detectado.ts || 0) < FRESCO_MS) ? detectado : null;
 
       clip.innerHTML = '';
@@ -882,14 +998,9 @@
       const hdr = el('div', 'drawer__header');
       const brand = el('div', 'drawer__brand');
       const bi = el('img', 'drawer__brand-img');
-      bi.src = assetUrl('kueskipay.png');
+      bi.src = assetUrl('kueskiPayconmacetita.png');
       bi.alt = 'KueskiPay';
       brand.appendChild(bi);
-      if (compat) {
-        const live = el('span', 'drawer__live');
-        live.append(el('span', 'drawer__live-dot'), document.createTextNode('Disponible'));
-        brand.appendChild(live);
-      }
       const closeBtn = el('button', 'drawer__close');
       closeBtn.setAttribute('aria-label', 'Cerrar');
       closeBtn.appendChild(icon('x', 18));
@@ -900,77 +1011,95 @@
       // ── Body ──
       const body = el('div', 'drawer__body');
 
-      // HERO: ¿puedo pagar aquí? — la pregunta más importante, respondida al instante.
-      const hero = el('div', 'drawer__hero ' + (compat ? 'drawer__hero--ok' : 'drawer__hero--no'));
-      const heroIco = el('div', 'drawer__hero-ico');
-      heroIco.appendChild(icon(compat ? 'check' : 'store', 22));
-      const heroTxt = el('div', 'drawer__hero-txt');
-      heroTxt.append(
-        el('span', 'drawer__hero-title', compat ? 'Puedes pagar a quincenas' : 'Tienda no compatible'),
-        el('span', 'drawer__hero-sub', compat ? `Disponible en ${tienda}` : `${tienda} aún no acepta KueskiPay`)
-      );
-      hero.append(heroIco, heroTxt);
-      body.appendChild(reveal(hero));
-
-      body.appendChild(reveal(el('div', 'drawer__divider')));
-
-      // Crédito disponible
-      const credit = el('div', 'drawer__credit');
-      const creditIco = el('div', 'drawer__credit-ico');
-      creditIco.appendChild(icon('wallet', 20));
-      const creditMain = el('div', 'drawer__credit-main');
-      creditMain.appendChild(el('span', 'drawer__credit-lbl', 'Crédito disponible'));
-      const figure = el('div', 'drawer__credit-figure');
-      if (user) {
-        figure.append(
-          el('span', 'drawer__credit-val', `$${disp.toLocaleString('es-MX')}`),
-          el('span', 'drawer__credit-cur', 'MXN')
+      if (compat) {
+        // HERO: ¿puedo pagar aquí? — la pregunta más importante, respondida al instante.
+        const hero = el('div', 'drawer__hero drawer__hero--ok');
+        const heroIco = el('div', 'drawer__hero-ico');
+        heroIco.appendChild(icon('check', 22));
+        const heroTxt = el('div', 'drawer__hero-txt');
+        heroTxt.append(
+          el('span', 'drawer__hero-title', 'Puedes pagar a quincenas'),
+          el('span', 'drawer__hero-sub', `Disponible en ${tienda}`)
         );
-      } else {
-        figure.appendChild(el('span', 'drawer__credit-val', 'Inicia sesión'));
-      }
-      creditMain.appendChild(figure);
-      if (nombre) creditMain.appendChild(el('span', 'drawer__credit-name', `Hola, ${nombre.split(' ')[0]}`));
-      credit.append(creditIco, creditMain);
-      body.appendChild(reveal(credit));
+        hero.append(heroIco, heroTxt);
+        body.appendChild(reveal(hero));
 
-      // Producto detectado (solo si la tienda es compatible)
-      if (compat && producto) {
-        const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
-        const cuota = raw > 0
-          ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
-          : '4 quincenas';
-        body.appendChild(reveal(el('div', 'drawer__divider')));
-        const pc = el('div', 'drawer__product');
-        const tag = el('span', 'drawer__product-tag');
-        tag.append(icon('tag', 12), document.createTextNode('Producto detectado'));
-        pc.appendChild(tag);
-        pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
-        const pr = el('div', 'drawer__product-row');
-        pr.append(
-          el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
-          el('span', 'drawer__product-quin', cuota)
+        // Saldo para compras (tarjeta azul, igual que el dashboard).
+        body.appendChild(reveal(buildSaldo('Saldo para compras', 'kueski', 'pay')));
+
+        // Producto detectado
+        if (producto) {
+          const raw = parseFloat(String(producto.precio).replace(/,/g, '')) || 0;
+          const cuota = raw > 0
+            ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
+            : '4 quincenas';
+          body.appendChild(reveal(el('div', 'drawer__divider')));
+          const pc = el('div', 'drawer__product');
+          const tag = el('span', 'drawer__product-tag');
+          tag.append(icon('tag', 12), document.createTextNode('Producto detectado'));
+          pc.appendChild(tag);
+          pc.appendChild(el('span', 'drawer__product-name', producto.nombre));
+          const pr = el('div', 'drawer__product-row');
+          pr.append(
+            el('span', 'drawer__product-price', `$${raw.toLocaleString('es-MX')}`),
+            el('span', 'drawer__product-quin', cuota)
+          );
+          pc.appendChild(pr);
+          body.appendChild(reveal(pc));
+        }
+
+        // CTA principal según el estado.
+        let btn;
+        if (!user) {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        } else {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(icon('bolt', 17), document.createTextNode('Calcular pago a quincenas'));
+          btn.addEventListener('click', () => openPopup('calculadora'));
+        }
+        body.appendChild(reveal(btn));
+      } else {
+        // ── Tienda NO afiliada: experiencia alterna ──
+        const hero = el('div', 'drawer__hero drawer__hero--no');
+        const heroIco = el('div', 'drawer__hero-ico');
+        heroIco.appendChild(icon('store', 22));
+        const heroTxt = el('div', 'drawer__hero-txt');
+        heroTxt.append(
+          el('span', 'drawer__hero-title', 'Tienda no disponible'),
+          el('span', 'drawer__hero-sub', '¡Pero tienes opciones!')
         );
-        pc.appendChild(pr);
-        body.appendChild(reveal(pc));
-      }
+        hero.append(heroIco, heroTxt);
+        body.appendChild(reveal(hero));
 
-      // CTA principal según el estado.
-      let btn;
-      if (!user) {
-        btn = el('button', 'drawer__btn drawer__btn--primary');
-        btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
-        btn.addEventListener('click', () => openPopup('inicio'));
-      } else if (compat) {
-        btn = el('button', 'drawer__btn drawer__btn--primary');
-        btn.append(icon('bolt', 17), document.createTextNode('Calcular pago a quincenas'));
-        btn.addEventListener('click', () => openPopup('calculadora'));
-      } else {
-        btn = el('button', 'drawer__btn drawer__btn--ghost');
-        btn.append(icon('store', 17), document.createTextNode('Ver tiendas disponibles'));
-        btn.addEventListener('click', () => openPopup('buscar'));
+        // Nota arriba del saldo: por qué KueskiCash sí aplica aquí.
+        const note = el('div', 'drawer__note');
+        note.appendChild(el('span', 'drawer__note-txt',
+          `${tienda} aún no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`));
+        body.appendChild(reveal(note));
+
+        // Saldo KueskiCash (tarjeta verde, mismo diseño que el dashboard).
+        body.appendChild(reveal(buildSaldo('Saldo KueskiCash', 'kueski', 'cash')));
+
+        // CTAs: usar la tarjeta o explorar tiendas afiliadas.
+        let btn;
+        if (!user) {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(document.createTextNode('Iniciar sesión'), icon('arrow', 18));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        } else {
+          btn = el('button', 'drawer__btn drawer__btn--primary');
+          btn.append(icon('wallet', 17), document.createTextNode('Usar mi tarjeta KueskiCash'));
+          btn.addEventListener('click', () => openPopup('inicio'));
+        }
+        body.appendChild(reveal(btn));
+
+        const ghost = el('button', 'drawer__btn drawer__btn--ghost');
+        ghost.append(icon('store', 17), document.createTextNode('Ver tiendas afiliadas'));
+        ghost.addEventListener('click', () => openPopup('buscar'));
+        body.appendChild(reveal(ghost));
       }
-      body.appendChild(reveal(btn));
 
       clip.appendChild(body);
 

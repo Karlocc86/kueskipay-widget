@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { IconMoney, IconCalendar, IconStore, IconCalc, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
+import { IconMoney, IconStore, IconPin, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
+import { getIniciales } from '../../lib/format'
 
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
 function DonutChart({ disponible, total, isCompatible }) {
@@ -334,11 +335,14 @@ export function TabInicio({ usuario, isCompatible, onVerTiendas }) {
         <>
           <div className="inicio__actions">
             {[
-              { Icon: IconMoney, label: 'Obtener dinero', onClick: undefined },
-              { Icon: IconCalendar, label: 'Abonar quincena', onClick: undefined },
-              { Icon: IconStore, label: 'Tiendas afiliadas', onClick: onVerTiendas },
-            ].map(({ Icon, label, onClick }) => (
-              <button key={label} className="action-btn" onClick={onClick}><Icon /><span>{label}</span></button>
+              { img: 'pedirPrestamo.png', label: 'Obtener dinero', onClick: undefined },
+              { img: 'abonarTienda.png', label: 'Abonar quincena', onClick: undefined },
+              { img: 'tiendasCercanas.png', label: 'Tiendas afiliadas', onClick: onVerTiendas },
+            ].map(({ img, label, onClick }) => (
+              <button key={label} className="action-btn" onClick={onClick}>
+                <img src={img} alt="" className="action-btn__img" draggable="false" />
+                <span>{label}</span>
+              </button>
             ))}
           </div>
         </>
@@ -356,76 +360,106 @@ export function TabInicio({ usuario, isCompatible, onVerTiendas }) {
   )
 }
 
-// ─── Tab: Inicio (KueskiPay – compra ahora, paga a quincenas) ─────────────────
-// Próxima fecha de pago quincenal: día 15 o último día del mes, lo que siga.
-function proximaQuincena(hoy = new Date()) {
-  return hoy.getDate() < 15
-    ? new Date(hoy.getFullYear(), hoy.getMonth(), 15)
-    : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0)
-}
-
-export function TabInicioKueski({ usuario, onCalcular, onVerTiendas }) {
-  const nombre = (usuario?.nombre ?? '').split(' ')[0] || 'usuario'
+// ─── Tab: Inicio (KueskiPay – saldo + tiendas con cashback) ───────────────────
+// Tarjeta de saldo; `cash` la pinta verde KueskiCash (tienda no afiliada).
+function BalanceCard({ usuario, cash = false }) {
   const disponible = usuario?.credito_disponible ?? 0
   const adeudo = usuario?.adeudo_proximo ?? 0
   const linea = disponible + adeudo
   const pctUso = linea > 0 ? Math.min(100, Math.round((adeudo / linea) * 100)) : 0
-  const fechaPago = proximaQuincena().toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })
 
   return (
+    <div className={`kpay-balance ${cash ? 'kpay-balance--cash' : ''}`}>
+      <div className="kpay-balance__deco" aria-hidden="true" />
+      <div className="kpay-balance__top">
+        <span className="kpay-balance__lbl">{cash ? 'Saldo KueskiCash' : 'Saldo para compras'}</span>
+        <span className="kpay-balance__mark">kueski<strong>{cash ? 'cash' : 'pay'}</strong></span>
+      </div>
+      <div className="kpay-balance__figure">
+        <span className="kpay-balance__amount">${disponible.toLocaleString('es-MX')}</span>
+        <span className="kpay-balance__cur">MXN</span>
+      </div>
+      <div className="kpay-balance__bar" role="img" aria-label={`${pctUso}% de tu línea en uso`}>
+        <div className="kpay-balance__bar-fill" style={{ width: `${pctUso}%` }} />
+      </div>
+      <span className="kpay-balance__meta">
+        ${adeudo.toLocaleString('es-MX')} en uso · línea de ${linea.toLocaleString('es-MX')}
+      </span>
+    </div>
+  )
+}
+
+export function TabInicioKueski({ usuario, tiendas = [], tiendaCompatible = true, onVerTiendas, onPagar }) {
+  return (
     <div className="inicio inicio--kueski">
-      <div className="inicio-k__hero">
-        <span className="inicio-k__eyebrow">Compra ahora, paga a quincenas</span>
-        <h2 className="inicio-k__title">Hola, {nombre} 👋</h2>
-        <p className="inicio-k__sub">Tu saldo KueskiPay listo para usar en tiendas afiliadas.</p>
-      </div>
-
-      <div className="kpay-balance">
-        <div className="kpay-balance__deco" aria-hidden="true" />
-        <div className="kpay-balance__top">
-          <span className="kpay-balance__lbl">Saldo para compras</span>
-          <span className="kpay-balance__mark">kueski<strong>pay</strong></span>
-        </div>
-        <div className="kpay-balance__figure">
-          <span className="kpay-balance__amount">${disponible.toLocaleString('es-MX')}</span>
-          <span className="kpay-balance__cur">MXN</span>
-        </div>
-        <div className="kpay-balance__bar" role="img" aria-label={`${pctUso}% de tu línea en uso`}>
-          <div className="kpay-balance__bar-fill" style={{ width: `${pctUso}%` }} />
-        </div>
-        <span className="kpay-balance__meta">
-          ${adeudo.toLocaleString('es-MX')} en uso · línea de ${linea.toLocaleString('es-MX')}
-        </span>
-      </div>
-
-      {adeudo > 0 ? (
-        <div className="kpay-next">
-          <span className="kpay-next__icon"><IconCalendar /></span>
-          <span className="kpay-next__body">
-            <span className="kpay-next__lbl">Próximo pago quincenal</span>
-            <span className="kpay-next__date">{fechaPago}</span>
-          </span>
-          <span className="kpay-next__amount">${adeudo.toLocaleString('es-MX')}</span>
-        </div>
+      {tiendaCompatible ? (
+        <>
+          <BalanceCard usuario={usuario} />
+          <div className="kpay-actions">
+            <button className="kpay-actions__primary" onClick={onPagar}>
+              <IconMoney />
+              <span>Pagar</span>
+            </button>
+          </div>
+        </>
       ) : (
-        <div className="kpay-next kpay-next--clear">
-          <span className="kpay-next__icon"><IconCalendar /></span>
-          <span className="kpay-next__body">
-            <span className="kpay-next__lbl">Estás al día</span>
-            <span className="kpay-next__date">Sin pagos pendientes</span>
-          </span>
-        </div>
+        <>
+          <div className="kpay-unavail">
+            <span className="kpay-unavail__icon"><IconStore /></span>
+            <span className="kpay-unavail__body">
+              <span className="kpay-unavail__title">Tu crédito KueskiPay no está disponible en esta tienda</span>
+              <span className="kpay-unavail__sub">
+                Tranquilo, tienes plan B: tu tarjeta KueskiCash funciona en cualquier comercio en línea.
+              </span>
+            </span>
+          </div>
+
+          <BalanceCard usuario={usuario} cash />
+
+          <div className="kpay-actions">
+            <button className="kpay-actions__primary">
+              <IconMoney />
+              <span>Pagar con KueskiCash</span>
+            </button>
+            <button className="kpay-actions__ghost" onClick={onVerTiendas}>
+              <IconStore />
+              <span>Ver tiendas afiliadas</span>
+            </button>
+          </div>
+        </>
       )}
 
-      <div className="kpay-actions">
-        <button className="kpay-actions__primary" onClick={onCalcular}>
-          <IconCalc />
-          <span>Calcular una compra</span>
-        </button>
-        <button className="kpay-actions__ghost" onClick={onVerTiendas}>
-          <IconStore />
-          <span>Ver tiendas afiliadas</span>
-        </button>
+      <h3 className="cashback__titulo">Tiendas con cashback</h3>
+      <div className="cashback__carrusel">
+        {tiendas.map((tienda) => (
+          <div key={tienda.id_tienda} className="cashback-card">
+            <a
+              href={`https://${tienda.url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="cashback-card__logo-link"
+              aria-label={`Ir a ${tienda.nombre}`}
+            >
+              {tienda.logo ? (
+                <img
+                  src={tienda.logo}
+                  alt={tienda.nombre}
+                  className="cashback-card__logo"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                    e.target.nextSibling.style.display = 'flex'
+                  }}
+                />
+              ) : null}
+              <div className="cashback-card__iniciales" style={{ display: tienda.logo ? 'none' : 'flex' }}>
+                {getIniciales(tienda.nombre)}
+              </div>
+            </a>
+            <span className="cashback-card__nombre">{tienda.nombre}</span>
+            <span className="cashback-card__pct">2% cashback</span>
+            <span className="cashback-card__online"><IconPin /> En línea</span>
+          </div>
+        ))}
       </div>
     </div>
   )

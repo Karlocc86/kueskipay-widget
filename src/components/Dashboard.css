@@ -8,16 +8,13 @@
   position: relative;
 }
 
-/* ─── Brand theming (kueski = green, kueskipay = blue) ───────────────────── */
+/* ─── Brand theming ──────────────────────────────────────────────────────── */
+/* Tema fijo en azul KueskiPay para ambos dashboards; el switch de moneda
+   solo cambia la vista de inicio, no los colores. */
 .dashboard {
   --brand-color: #1A73E8;
   --brand-color-soft: #EFF6FF;
   --brand-color-glow: rgba(26, 115, 232, 0.18);
-}
-.dashboard[data-brand="kueski"] {
-  --brand-color: #00B26A;
-  --brand-color-soft: #E7F8EF;
-  --brand-color-glow: rgba(0, 178, 106, 0.22);
 }
 
 .dashboard__header {
@@ -67,6 +64,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Con la cara KueskiPay activa, el área clickeable se extiende ~30% a lo ancho
+   (el wordmark es más largo); con Kueski se queda en los 82px base. */
+.brand-toggle[data-brand="kueskipay"] {
+  width: 107px;
+}
+
 .brand-toggle:focus-visible {
   outline: 2px solid var(--brand-color);
   outline-offset: 3px;
@@ -93,13 +96,19 @@
   will-change: transform, opacity;
 }
 
+/* La cara de Kueski va más grande (el wordmark trae aire vertical);
+   la de KueskiPay se baja un pelín para alinearla ópticamente. */
+.brand-toggle__img            { --ty: -50%; }
+.brand-toggle__img--kueski    { height: 18px; --ty: calc(-50% + 3px); }
+.brand-toggle__img--kueskipay { --ty: calc(-50% + 3px); }
+
 /* Default (brand = kueskipay): kueskipay flat, kueski flipped below */
-.brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(0deg);   opacity: 1; }
-.brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(-90deg);  opacity: 0; }
+.brand-toggle__img--kueskipay { transform: translateY(var(--ty)) rotateX(0deg);   opacity: 1; }
+.brand-toggle__img--kueski    { transform: translateY(var(--ty)) rotateX(-90deg);  opacity: 0; }
 
 /* Active (brand = kueski): kueski flat, kueskipay flipped above */
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(0deg);  opacity: 1; }
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(90deg); opacity: 0; }
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translateY(var(--ty)) rotateX(0deg);  opacity: 1; }
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translateY(var(--ty)) rotateX(90deg); opacity: 0; }
 
 .dashboard__header-icons {
   display: flex;
@@ -1042,6 +1051,13 @@
   color: #374151;
   text-align: center;
   line-height: 1.2;
+}
+
+.action-btn__img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
 }
 
 /* Payment alert */
@@ -2402,6 +2418,33 @@
 .settings-item--row { cursor: default; }
 .settings-item--row:hover { background: transparent; }
 
+.settings-test-btn {
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--brand-color) 28%, #e5e7eb);
+  background: #ffffff;
+  color: var(--brand-color);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 6px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.settings-test-btn:hover {
+  background: var(--brand-color-soft);
+  border-color: var(--brand-color);
+}
+
+.settings-test-btn:active {
+  transform: scale(0.96);
+}
+
+.settings-test-status {
+  color: #4b5563;
+}
+
 /* Logout */
 .settings-logout {
   width: 100%;
@@ -3106,6 +3149,56 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* Variante KueskiCash (verde, hardcodeado: el brand queda fijo en azul) */
+.kpay-balance--cash {
+  background: linear-gradient(135deg, #00C46A 0%, color-mix(in srgb, #00B26A 60%, #000) 100%);
+  box-shadow: 0 10px 22px -8px rgba(0, 178, 106, 0.35);
+}
+
+/* Aviso: crédito KueskiPay no disponible en esta tienda */
+.kpay-unavail {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: 16px;
+  background: #FEF2F2;
+  border: 1px solid rgba(224, 47, 47, 0.14);
+}
+
+.kpay-unavail__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.kpay-unavail__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kpay-unavail__title {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.1px;
+  line-height: 1.2;
+  color: #991B1B;
+}
+
+.kpay-unavail__sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
 /* Próximo pago quincenal */
 .kpay-next {
   display: flex;
@@ -3570,10 +3663,6 @@
   background: var(--brand-color-soft);
 }
 
-.paycal-item--selected {
-  cursor: default;
-}
-
 /* Item ya liquidado */
 .paycal-item--pagado {
   opacity: 0.55;
@@ -3618,15 +3707,6 @@
 
 .paycal-entry--open .paycal-payrow__inner {
   padding: 10px;
-}
-
-.paycal-payrow__concept {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .paycal-payrow__actions {
@@ -3744,6 +3824,15 @@
   text-overflow: ellipsis;
 }
 
+.paycal-item__concept {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .paycal-item__cuota {
   font-size: 11px;
   color: #6b7280;
@@ -3775,4 +3864,113 @@
   padding: 3px 7px;
   border-radius: 999px;
   white-space: nowrap;
+}
+
+/* ─── Tiendas con cashback (inicio KueskiPay) ─────────────────────────────── */
+.cashback__titulo {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 16px 0 0 0;
+}
+
+.cashback__carrusel {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 10px 4px 12px;
+  margin: 0 -4px;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.cashback__carrusel::-webkit-scrollbar {
+  height: 5px;
+}
+
+.cashback__carrusel::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+.cashback-card {
+  flex: 0 0 auto;
+  width: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  scroll-snap-align: start;
+  text-align: center;
+}
+
+/* Rectángulo 1 horizontal : 0.8 vertical; se expande en hover y regresa a su
+   tamaño original al quitar el cursor o soltar el click. */
+.cashback-card__logo-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 0.8;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cashback-card__logo-link:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.18);
+}
+
+.cashback-card__logo-link:active {
+  transform: scale(1);
+}
+
+.cashback-card__logo {
+  width: 78%;
+  height: 72%;
+  object-fit: contain;
+}
+
+.cashback-card__iniciales {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+}
+
+.cashback-card__nombre {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.cashback-card__pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: #00C46A;
+}
+
+.cashback-card__online {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
 }

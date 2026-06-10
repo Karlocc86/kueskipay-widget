@@ -51,6 +51,7 @@ function publicar(producto) {
         nombre: producto.nombre,
         precio: producto.precio,
         url: window.location.hostname.replace(/^www\./, ''),
+        href: window.location.href,   // página exacta: el FAB solo lo muestra ahí
         ts: Date.now(),
       },
     })

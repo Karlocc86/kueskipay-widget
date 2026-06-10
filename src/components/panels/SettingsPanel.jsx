@@ -5,15 +5,21 @@ import {
   IconAlert, IconCheck, IconUser, IconCard, IconShield, IconBellSm, IconGlobe, IconHelp, IconLogout, IconPlay,
 } from '../icons'
 
-export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTutorial }) {
+export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTutorial, onTestPush, onTestEmail }) {
   const ref = useRef()
   const bodyRef = useRef()
   const [view, setView] = useState('menu')
   const [pushNotifs, setPushNotifs] = useState(true)
   const [emailNotifs, setEmailNotifs] = useState(false)
   const [faqOpen, setFaqOpen] = useState(null)
+  const [testStatus, setTestStatus] = useState('')
 
   useEffect(() => { bodyRef.current?.scrollTo(0, 0) }, [view])
+  useEffect(() => {
+    if (!testStatus) return undefined
+    const timer = window.setTimeout(() => setTestStatus(''), 2600)
+    return () => window.clearTimeout(timer)
+  }, [testStatus])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -24,9 +30,39 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
   const correo = usuario?.correo || ''
   const iniciales = nombre.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'KP'
 
+  const handleTestPush = async () => {
+    if (!pushNotifs) {
+      setPushNotifs(true)
+    }
+
+    const status = await onTestPush?.()
+    setTestStatus(status === 'push-blocked'
+      ? 'Se agrego al panel. Permite notificaciones para ver la push.'
+      : 'Push de prueba enviada.')
+  }
+
+  const handleTestEmail = () => {
+    if (!emailNotifs) {
+      setEmailNotifs(true)
+    }
+
+    onTestEmail?.()
+    setTestStatus('Correo de prueba registrado.')
+  }
+
   const faqs = [
     { q: '¿Cómo pago mi próxima cuota?',
-      a: 'El cobro es automático en la tarjeta o cuenta que registraste. También puedes adelantar el pago desde Historial → "Pagar ahora".' },
+      a: {
+        items: [
+          'Pago de servicio desde la aplicación móvil BBVA.',
+          'Practicaja BBVA.',
+          'Transferencias desde otros bancos.',
+          'Tiendas afiliadas.',
+          'Tiendas Oxxo.',
+        ],
+        note: 'Ten en cuenta que no hay cargos o penalizaciones por pagos anticipados y si lo haces, ¡vas a pagar menos intereses! Consulta tu saldo, las fechas de pago y las referencias de los distintos métodos de pago, en tu perfil de Kueski o por WhatsApp a través de nuestro asistente virtual Kike.',
+      },
+    },
     { q: '¿Puedo cambiar mi método de pago?',
       a: 'Sí. Ve a Ajustes → Métodos de pago para agregar, editar o eliminar tu tarjeta o cuenta.' },
     { q: '¿Qué pasa si pago tarde?',
@@ -66,11 +102,11 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
           <section className="settings-section">
             <span className="hist-eyebrow">Otros canales</span>
             <div className="support-channels">
-              <a className="support-channel" href="https://wa.me/5215512345678" target="_blank" rel="noopener noreferrer">
+              <a className="support-channel" href="https://wa.link/xbcubn" target="_blank" rel="noopener noreferrer">
                 <span className="support-channel__icon support-channel__icon--wa"><IconWhatsapp /></span>
                 <span className="support-channel__body">
                   <span className="support-channel__label">WhatsApp</span>
-                  <span className="support-channel__value">55 1234 5678</span>
+                  <span className="support-channel__value">800 224 2264</span>
                 </span>
                 <span className="support-channel__chev"><IconChevron /></span>
               </a>
@@ -86,7 +122,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
                 <span className="support-channel__icon support-channel__icon--ml"><IconMail /></span>
                 <span className="support-channel__body">
                   <span className="support-channel__label">Correo</span>
-                  <span className="support-channel__value">ayuda@kueski.com</span>
+                  <span className="support-channel__value">soporte@kueski.com</span>
                 </span>
                 <span className="support-channel__chev"><IconChevron /></span>
               </a>
@@ -173,6 +209,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
             <li className="settings-item settings-item--row">
               <span className="settings-item__icon"><IconBellSm /></span>
               <span className="settings-item__label">Notificaciones push</span>
+              <button className="settings-test-btn" onClick={handleTestPush}>Probar</button>
               <button
                 className={`calc__reminder-toggle ${pushNotifs ? 'calc__reminder-toggle--on' : ''}`}
                 onClick={() => setPushNotifs(v => !v)}
@@ -184,6 +221,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
             <li className="settings-item settings-item--row">
               <span className="settings-item__icon"><IconMail /></span>
               <span className="settings-item__label">Avisos por correo</span>
+              <button className="settings-test-btn" onClick={handleTestEmail}>Probar</button>
               <button
                 className={`calc__reminder-toggle ${emailNotifs ? 'calc__reminder-toggle--on' : ''}`}
                 onClick={() => setEmailNotifs(v => !v)}
@@ -199,6 +237,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
               <span className="settings-item__chev"><IconChevron /></span>
             </li>
           </ul>
+          {testStatus && <p className="settings-section__hint settings-test-status">{testStatus}</p>}
         </section>
 
         <section className="settings-section">
