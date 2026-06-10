@@ -3020,56 +3020,188 @@
   margin: 0;
 }
 
-.inicio-k__placeholder {
-  margin-top: 8px;
-  background: #ffffff;
-  border: 1px dashed #d1d5db;
-  border-radius: 14px;
-  padding: 28px 22px;
+/* Tarjeta de saldo (gradiente azul de marca) */
+.kpay-balance {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
+  gap: 8px;
+  padding: 16px 16px 14px;
+  border-radius: 16px;
+  color: #fff;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 70%, #000) 100%);
+  box-shadow: 0 10px 22px -8px var(--brand-color-glow);
 }
 
-.inicio-k__placeholder-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: var(--brand-color-soft);
+.kpay-balance__deco {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.kpay-balance__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpay-balance__lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.kpay-balance__mark {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.kpay-balance__mark strong { font-weight: 800; color: #fff; }
+
+.kpay-balance__figure {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.kpay-balance__amount {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpay-balance__cur {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.kpay-balance__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.kpay-balance__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #fff;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kpay-balance__meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Próximo pago quincenal */
+.kpay-next {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  box-shadow: 0 2px 8px -4px rgba(15, 23, 42, 0.08);
+}
+
+.kpay-next__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 4px;
+  background: var(--brand-color-soft);
+  color: var(--brand-color);
 }
 
-.inicio-k__placeholder-title {
-  font-size: 15px;
+.kpay-next__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.kpay-next__lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.kpay-next__date {
+  font-size: 13.5px;
   font-weight: 700;
   color: #1a1a2e;
-  margin: 0;
+  text-transform: capitalize;
 }
 
-.inicio-k__placeholder-sub {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0;
-  line-height: 1.45;
-  max-width: 280px;
-}
-
-.inicio-k__placeholder-tag {
-  margin-top: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.kpay-next__amount {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
   color: var(--brand-color);
-  background: var(--brand-color-soft);
-  padding: 4px 10px;
-  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
 }
+
+.kpay-next--clear .kpay-next__icon { background: #E7F8EF; color: #00B26A; }
+
+/* Acciones */
+.kpay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+.kpay-actions__primary,
+.kpay-actions__ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.15s ease;
+}
+
+.kpay-actions__primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 78%, #000) 100%);
+  box-shadow: 0 8px 16px -6px var(--brand-color-glow);
+}
+.kpay-actions__primary:hover { transform: translateY(-1px); box-shadow: 0 11px 20px -7px var(--brand-color-glow); }
+.kpay-actions__primary:active { transform: translateY(0) scale(0.985); }
+
+.kpay-actions__ghost {
+  color: #374151;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+.kpay-actions__ghost:hover { background: var(--brand-color-soft); border-color: var(--brand-color); color: var(--brand-color); }
 
 /* ─── Payments Calendar ──────────────────────────────────────────────────── */
 
