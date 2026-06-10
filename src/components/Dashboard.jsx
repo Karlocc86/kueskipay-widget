@@ -220,7 +220,7 @@ function Dashboard({ usuario, onLogout }) {
       )}
 
       <main className="dashboard__content" data-tour="content">
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} onCalcular={() => setTab('calculadora')} onVerTiendas={() => setTab('buscar')} />}
+        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} tiendas={tiendas} />}
         {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuario} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
         {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
         {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}
