@@ -116,19 +116,66 @@
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
     }
 
+    /* Badge → check de compatibilidad (visible solo si la tienda es compatible) */
     .fab__badge {
       position: absolute;
-      top: 0; right: 0;
-      width: 15px;
-      height: 15px;
+      top: -2px; right: -2px;
+      width: 19px; height: 19px;
       border-radius: 50%;
-      background: ${ACCENT};
-      border: 2.5px solid #fff;
+      background: #fff; color: ${PRIMARY_DARK};
+      display: grid; place-items: center;
       transform: scale(0);
       transition: transform .3s cubic-bezier(.34,1.56,.64,1);
-      box-shadow: 0 0 0 0 rgba(124,245,184,0.7);
+      box-shadow: 0 2px 6px rgba(6,42,35,0.28);
     }
-    .fab__badge--on { transform: scale(1); animation: kpBadgePulse 2.4s ease-out infinite; }
+    .fab__badge svg { width: 12px; height: 12px; display: block; }
+    .fab__badge--on { transform: scale(1); }
+
+    /* ── Estado: compatible vs no compatible ── */
+    .fab--off { filter: grayscale(1) brightness(.97); opacity: .6; }
+    .fab--off::after { animation: none !important; }   /* sin halo */
+    .fab--off:hover { opacity: .82; }
+
+    /* Foco de teclado visible (no en click de mouse) */
+    .fab:focus-visible { outline: 3px solid rgba(13,138,122,.55); outline-offset: 3px; }
+
+    /* ── Pestaña: replegado contra el borde anclado ── */
+    .fab--peek.fab--dock-right { transform: translateX(20px); opacity: .55; }
+    .fab--peek.fab--dock-left  { transform: translateX(-20px); opacity: .55; }
+    .fab--peek::after { animation: none; }             /* sin halo replegado */
+    /* (después de las reglas dock para ganar por orden de fuente) */
+    .fab--peek:hover, .fab--peek:focus-visible {
+      transform: translateY(-2px) scale(1.05); opacity: 1;
+    }
+
+    /* ── Globo lateral: etiqueta (hover) + nudge de producto unificados ── */
+    .fab__bubble {
+      position: absolute; top: 50%;
+      --bx: 6px;
+      transform: translateY(-50%) translateX(var(--bx));
+      white-space: nowrap;
+      font-family: var(--kp-font);
+      font-size: 12px; font-weight: 700; letter-spacing: .1px;
+      padding: 7px 11px; border-radius: 11px;
+      background: var(--kp-surface); color: var(--kp-ink);
+      box-shadow: 0 6px 20px rgba(6,42,35,.22), 0 0 0 1px rgba(14,27,22,.05);
+      pointer-events: none; opacity: 0; z-index: 1;
+      transition: opacity .2s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .fab__bubble::after {       /* caret hacia el FAB */
+      content: ''; position: absolute; top: 50%;
+      width: 9px; height: 9px; background: inherit;
+      transform: translateY(-50%) rotate(45deg);
+    }
+    .fab--dock-right .fab__bubble { right: calc(100% + 12px); --bx: 6px; }
+    .fab--dock-right .fab__bubble::after { right: -4px; }
+    .fab--dock-left  .fab__bubble { left: calc(100% + 12px); --bx: -6px; }
+    .fab--dock-left  .fab__bubble::after { left: -4px; }
+    .fab__bubble--show { opacity: 1; transform: translateY(-50%) translateX(0); }
+    .fab__bubble--nudge {
+      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY}); color: #fff;
+      box-shadow: 0 8px 22px -4px rgba(13,138,122,.5);
+    }
 
     /* ── Panel (claro minimalista) ── */
     .drawer {
@@ -379,7 +426,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .fab, .drawer, .fab__badge { animation: none !important; transition: opacity .15s ease !important; }
+      .fab, .drawer, .fab__badge, .fab__bubble { animation: none !important; transition: opacity .15s ease !important; }
       .drawer { transform: none; }
       .kp-reveal { opacity: 1 !important; animation: none !important; }
     }
@@ -392,6 +439,7 @@
   fab.setAttribute('role', 'button');
   fab.setAttribute('aria-label', 'KueskiPay');
   fab.setAttribute('aria-expanded', 'false');
+  fab.setAttribute('tabindex', '0');   // enfocable por teclado
 
   const fabImg = document.createElement('img');
   fabImg.className = 'fab__img';
@@ -400,9 +448,20 @@
   if (logoUrl) fabImg.src = logoUrl;
   fab.appendChild(fabImg);
 
+  // Badge con check (SVG inline; no usa icon() para evitar TDZ de ICONS en este punto).
   const fabBadge = document.createElement('span');
   fabBadge.className = 'fab__badge';
+  fabBadge.setAttribute('aria-hidden', 'true');
+  fabBadge.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   fab.appendChild(fabBadge);
+
+  // Globo lateral: etiqueta al hover + nudge de producto (decorativo).
+  const fabBubble = document.createElement('span');
+  fabBubble.className = 'fab__bubble';
+  fabBubble.setAttribute('aria-hidden', 'true');
+  fab.appendChild(fabBubble);
 
   const drawer = document.createElement('div');
   drawer.className = 'drawer';
@@ -472,6 +531,9 @@
 
     // Horizontal: alinear el borde cercano al FAB, sin salir del viewport.
     const isLeftSide = fabCenterX < vw / 2;
+    // Lado de anclaje del FAB → dirige el repliegue (peek) y el lado del bubble.
+    fab.classList.toggle('fab--dock-left', isLeftSide);
+    fab.classList.toggle('fab--dock-right', !isLeftSide);
     let left = isLeftSide ? fabLeft : (fabLeft + FAB_SIZE - drawerW);
     left = Math.max(MARGIN, Math.min(left, vw - drawerW - MARGIN));
     drawer.style.left = left + 'px';
@@ -554,6 +616,8 @@
     dragMoved   = false;
     lastCursorX = e.clientX;
     e.preventDefault();
+    expandFab();        // arrastrar siempre expande el FAB
+    hideBubble();
     cancelAnimationFrame(rafId);
     fab.style.transition = 'none';
     fab.classList.add('fab--dragging');
@@ -590,6 +654,7 @@
     fab.classList.remove('fab--dragging');
     fab.style.transform = '';
     fab.style.filter    = '';
+    schedulePeek();     // reanuda el ciclo de repliegue (open/expand lo cancelan)
     if (!isContextValid()) { host.remove(); return; }
 
     if (!dragMoved) {
@@ -630,6 +695,8 @@
     isOpen = true;
     fab.setAttribute('aria-expanded', 'true');
     fab.classList.remove('fab--pulse');
+    expandFab();        // el FAB nunca queda replegado con el panel abierto
+    hideBubble();
     // Espera a que el contenido esté construido para evitar un parpadeo vacío.
     renderDrawer(() => requestAnimationFrame(() => drawer.classList.add('drawer--open')));
   }
@@ -637,8 +704,9 @@
   function closeDrawer() {
     isOpen = false;
     fab.setAttribute('aria-expanded', 'false');
-    fab.classList.add('fab--pulse');
+    if (isCompat()) fab.classList.add('fab--pulse');
     drawer.classList.remove('drawer--open');
+    schedulePeek();     // reanuda el repliegue tras cerrar
   }
 
   function toggleDrawer() {
@@ -656,19 +724,102 @@
     if (e.key === 'Escape' && isOpen) closeDrawer();
   });
 
-  // ─── Badge de compatibilidad ──────────────────────────────────────────────────
-  function syncBadge() {
-    const compat = window.__kueski_force_compatible !== false;
-    fabBadge.classList.toggle('fab__badge--on', compat);
+  // ─── Estado del FAB: compatibilidad, etiqueta, nudge y pestaña ─────────────────
+  const FRESCO_MS = 60 * 60 * 1000;
+  let currentNudge = null;     // texto del nudge si hay producto fresco, o null
+  let nudgeHideTimer = null;
+  let peekTimer = null;
+
+  function isCompat() { return window.__kueski_force_compatible !== false; }
+
+  function showBubble(text, isNudge) {
+    fabBubble.textContent = text;
+    fabBubble.classList.toggle('fab__bubble--nudge', !!isNudge);
+    fabBubble.classList.add('fab__bubble--show');
+  }
+  function hideBubble() { fabBubble.classList.remove('fab__bubble--show'); }
+
+  // Repliega/expande el FAB contra el borde tras inactividad.
+  function expandFab() { clearTimeout(peekTimer); fab.classList.remove('fab--peek'); }
+  function schedulePeek() {
+    clearTimeout(peekTimer);
+    peekTimer = setTimeout(() => {
+      if (!isOpen && !isDragging) fab.classList.add('fab--peek');
+    }, 3500);
   }
 
-  syncBadge();
-  window.addEventListener('kueski:storechange', syncBadge);
+  // Lee el producto detectado y actualiza el nudge (misma frescura que renderDrawer).
+  function updateNudge(autoReveal) {
+    if (!isContextValid()) return;
+    chrome.storage.local.get(['productoDetectado'], (res) => {
+      const d = res.productoDetectado;
+      const tienda = window.location.hostname.replace(/^www\./, '');
+      const fresh = d && d.url === tienda && (Date.now() - (d.ts || 0) < FRESCO_MS) ? d : null;
+      if (fresh && isCompat()) {
+        const raw = parseFloat(String(fresh.precio).replace(/,/g, '')) || 0;
+        currentNudge = raw > 0
+          ? `desde $${Math.ceil((raw * 1.12) / 4).toLocaleString('es-MX')}/qna`
+          : null;
+      } else {
+        currentNudge = null;
+      }
+      // Al detectarse un producto nuevo, asoma el nudge unos segundos.
+      if (autoReveal && currentNudge && !isOpen && !isDragging) {
+        expandFab();
+        showBubble(currentNudge, true);
+        clearTimeout(nudgeHideTimer);
+        nudgeHideTimer = setTimeout(hideBubble, 4200);
+      }
+    });
+  }
 
-  // Repinta el drawer si llega un producto nuevo mientras está abierto.
+  function syncFab() {
+    const compat = isCompat();
+    fab.classList.toggle('fab--ready', compat);
+    fab.classList.toggle('fab--off', !compat);
+    fabBadge.classList.toggle('fab__badge--on', compat);
+    if (!compat) fab.classList.remove('fab--pulse');
+    else if (!isOpen) fab.classList.add('fab--pulse');
+    fab.setAttribute('aria-label',
+      compat ? 'KueskiPay · Disponible en esta tienda' : 'KueskiPay · Tienda no compatible');
+    updateNudge(false);
+  }
+
+  syncFab();
+  window.addEventListener('kueski:storechange', syncFab);
+
+  // Hover / foco: muestra etiqueta o nudge, y expande el FAB.
+  fab.addEventListener('pointerenter', () => {
+    if (isDragging) return;
+    expandFab();
+    clearTimeout(nudgeHideTimer);
+    if (currentNudge) showBubble(currentNudge, true);
+    else showBubble(isCompat() ? 'Disponible aquí' : 'KueskiPay', false);
+  });
+  fab.addEventListener('pointerleave', () => {
+    if (isDragging) return;
+    hideBubble();
+    schedulePeek();
+  });
+  fab.addEventListener('focus', () => { expandFab(); });
+  fab.addEventListener('blur', () => { hideBubble(); schedulePeek(); });
+
+  // Teclado: Enter/Espacio abre o cierra el panel.
+  fab.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDrawer(); }
+  });
+
+  // Arranca el ciclo de repliegue.
+  schedulePeek();
+
+  // Repinta el drawer y refresca el nudge si llega un producto nuevo.
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'local' && changes.productoDetectado && isOpen) renderDrawer();
+      if (area !== 'local') return;
+      if (changes.productoDetectado) {
+        if (isOpen) renderDrawer();
+        updateNudge(true);
+      }
     });
   } catch {}
 
