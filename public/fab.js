@@ -22,7 +22,6 @@
   const PRIMARY      = '#0d8a7a';
   const PRIMARY_DARK = '#085041';
   const PRIMARY_LITE = '#16b89f';
-  const ACCENT       = '#7CF5B8';
   const STORAGE_POS  = 'kpay_fab_position';
 
   const FAB_SIZE = 56;
@@ -192,9 +191,13 @@
         0 0 0 1px rgba(14,27,22,0.05);
       pointer-events: none;
       opacity: 0;
+      /* visibility saca el panel cerrado del orden de tabulación y del árbol de
+         accesibilidad (opacity:0 solo lo oculta visualmente); el delay deja
+         terminar la animación de salida antes de ocultarlo. */
+      visibility: hidden;
       transform: scale(0.9) translateY(var(--kp-enter-ty, 8px));
       transform-origin: right bottom;   /* se sobrescribe en applyPos hacia el FAB */
-      transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1);
+      transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1), visibility 0s linear .25s;
       font-family: var(--kp-font);
       font-feature-settings: "ss01" 1;
       -webkit-font-smoothing: antialiased;
@@ -202,7 +205,11 @@
       color: var(--kp-ink);
       overflow: visible;                /* el beak vive fuera del borde */
     }
-    .drawer--open { opacity: 1; transform: scale(1) translateY(0); pointer-events: all; }
+    .drawer--open {
+      opacity: 1; transform: scale(1) translateY(0); pointer-events: all;
+      visibility: visible;
+      transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1), visibility 0s;
+    }
 
     /* Conector (beak) que ancla el panel al FAB */
     .drawer__beak {
@@ -500,11 +507,16 @@
   const GAP = 12;   // separación panel ↔ FAB: el FAB nunca queda cubierto
 
   function applyPos() {
-    fab.style.bottom = fabPos.bottom + 'px';
-    fab.style.right  = fabPos.right  + 'px';
-
     const vw = vpW();
     const vh = vpH();
+
+    // La posición guardada pudo capturarse en una ventana más grande (o la
+    // ventana se encogió): sin clamp el FAB puede quedar fuera del viewport.
+    fabPos.right  = clamp(fabPos.right,  MARGIN, Math.max(MARGIN, vw - FAB_SIZE - MARGIN));
+    fabPos.bottom = clamp(fabPos.bottom, MARGIN, Math.max(MARGIN, vh - FAB_SIZE - MARGIN));
+
+    fab.style.bottom = fabPos.bottom + 'px';
+    fab.style.right  = fabPos.right  + 'px';
 
     const fabLeft = vw - fabPos.right - FAB_SIZE;
     const fabTop  = vh - fabPos.bottom - FAB_SIZE;
@@ -551,7 +563,8 @@
 
   if (isContextValid()) {
     chrome.storage.local.get([STORAGE_POS], (res) => {
-      if (res[STORAGE_POS]) fabPos = res[STORAGE_POS];
+      const p = res[STORAGE_POS];
+      if (p && typeof p.right === 'number' && typeof p.bottom === 'number') fabPos = p;
       applyPos();
     });
   } else {
@@ -688,6 +701,20 @@
     chrome.storage.local.set({ [STORAGE_POS]: { right: targetR, bottom: targetB } });
   });
 
+  // El navegador puede cancelar el drag (scroll táctil, pérdida de puntero…):
+  // sin esta limpieza isDragging queda en true, el rAF sigue corriendo y el FAB
+  // se queda congelado con transition:none y la clase fab--dragging.
+  fab.addEventListener('pointercancel', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    cancelAnimationFrame(rafId);
+    fab.classList.remove('fab--dragging');
+    fab.style.transform  = '';
+    fab.style.filter     = '';
+    fab.style.transition = '';
+    schedulePeek();
+  });
+
   // ─── Apertura / cierre del drawer ─────────────────────────────────────────────
   let isOpen = false;
 
@@ -698,7 +725,11 @@
     expandFab();        // el FAB nunca queda replegado con el panel abierto
     hideBubble();
     // Espera a que el contenido esté construido para evitar un parpadeo vacío.
-    renderDrawer(() => requestAnimationFrame(() => drawer.classList.add('drawer--open')));
+    // Se re-verifica isOpen: un segundo click pudo cerrar el drawer mientras
+    // el render asíncrono seguía pendiente.
+    renderDrawer(() => requestAnimationFrame(() => {
+      if (isOpen) drawer.classList.add('drawer--open');
+    }));
   }
 
   function closeDrawer() {
