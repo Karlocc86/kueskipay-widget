@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import './Dashboard.css'
 import Tutorial from './Tutorial'
 
 import { IconBell, IconCalendarHeader, IconSettings, IconHome, IconCalc, IconSearch, IconChart, IconTicket } from './icons'
 import { COUPONS } from '../data/coupons'
-import { buildNotifications, buildTestNotification } from '../data/notifications'
+import { buildNotifications, buildTestNotification, buildPagoRegistradoNotification } from '../data/notifications'
+import { buildPaymentSchedule, adeudoPendiente } from '../data/paymentSchedules'
 import NotificationsPanel from './panels/NotificationsPanel'
 import CouponsPanel from './panels/CouponsPanel'
 import PaymentsCalendar from './panels/PaymentsCalendar'
@@ -80,7 +81,10 @@ function Dashboard({ usuario, onLogout }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showCoupons, setShowCoupons] = useState(false)
-  const [notifs, setNotifs] = useState(buildNotifications)
+  // El calendario de pagos es la fuente única: las notificaciones de pago y el
+  // adeudo mostrado en los tabs se derivan de esta misma agenda.
+  const [pagos, setPagos] = useState(() => buildPaymentSchedule(usuario?.correo))
+  const [notifs, setNotifs] = useState(() => buildNotifications(pagos))
   const unreadNotifs = notifs.filter((n) => !n.leido).length
   const [tiendas, setTiendas] = useState([])
   const [historialCrediticio, setHistorialCrediticio] = useState(null)
@@ -89,6 +93,21 @@ function Dashboard({ usuario, onLogout }) {
   // la vista normal; en la extensión la detección lo corrige enseguida.
   const [tiendaCompatible, setTiendaCompatible] = useState(true)
   const [showTutorial, setShowTutorial] = useState(false)
+
+  // Pagar una cuota actualiza la agenda y notifica el pago con datos reales.
+  const pagarPago = useCallback((id) => {
+    const pago = pagos.find((p) => p.id === id)
+    if (!pago || pago.status === 'pagado') return
+    setPagos((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'pagado' } : p)))
+    setNotifs((prev) => [buildPagoRegistradoNotification(pago), ...prev])
+  }, [pagos])
+
+  // Usuario con el adeudo normalizado a la suma del calendario, para que el
+  // donut, la tarjeta de saldo y el % de uso cuenten la misma historia.
+  const usuarioNormalizado = useMemo(
+    () => (usuario ? { ...usuario, adeudo_proximo: adeudoPendiente(pagos) } : usuario),
+    [usuario, pagos]
+  )
 
   const addTestNotification = useCallback((channel) => {
     const notification = buildTestNotification(channel)
@@ -265,17 +284,18 @@ function Dashboard({ usuario, onLogout }) {
 
       {showCalendar && (
         <PaymentsCalendar
-          usuario={usuario}
+          pagos={pagos}
+          onPagar={pagarPago}
           onClose={() => setShowCalendar(false)}
         />
       )}
 
       <main className="dashboard__content" data-tour="content">
-        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuario} tiendas={tiendas} tiendaCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} />}
-        {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuario} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
-        {tab === 'calculadora' && <TabCalculadora usuario={usuario} />}
+        {tab === 'inicio' && brand === 'kueskipay'  && <TabInicioKueski usuario={usuarioNormalizado} tiendas={tiendas} tiendaCompatible={tiendaCompatible} onVerTiendas={() => setTab('buscar')} onPagar={() => { setShowCalendar(true); setShowNotifications(false); setShowSettings(false); setShowCoupons(false) }} />}
+        {tab === 'inicio' && brand === 'kueski'     && <TabInicio usuario={usuarioNormalizado} isCompatible={true} onVerTiendas={() => setTab('buscar')} />}
+        {tab === 'calculadora' && <TabCalculadora usuario={usuarioNormalizado} />}
         {tab === 'buscar'      && <TabBuscar tiendas={tiendas} />}
-        {tab === 'historial'   && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuario} />}
+        {tab === 'historial'   && <TabHistorial historialCrediticio={historialCrediticio} historialCompras={historialCompras} tiendas={tiendas} usuario={usuarioNormalizado} />}
       </main>
 
       <nav className="dashboard__nav">

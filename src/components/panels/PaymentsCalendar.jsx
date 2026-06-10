@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { IconClose, IconBack, IconChevron, IconCheckSm } from '../icons'
 import { PAY_LOGO } from '../../data/logos'
-import { buildPaymentSchedule } from '../../data/paymentSchedules'
+import { proximoPago } from '../../data/paymentSchedules'
+import { fechaRelativa } from '../../lib/format'
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 const MESES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -18,15 +19,6 @@ const STATUS_META = {
   pagado:    { label: 'Pagado',     color: '#10b981', bg: '#E7F8EF' },
 }
 
-// "hace 12 días" / "ayer" / "hoy" / "mañana" / "en 4 días"
-function fechaRelativa(date, today) {
-  const dias = Math.round((date - today) / 86400000)
-  if (dias === 0) return 'hoy'
-  if (dias === 1) return 'mañana'
-  if (dias === -1) return 'ayer'
-  return dias > 0 ? `en ${dias} días` : `hace ${-dias} días`
-}
-
 function PaymentStoreLogo({ tienda }) {
   const logo = PAY_LOGO[tienda]
   const initials = tienda.split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase()
@@ -40,7 +32,9 @@ function PaymentStoreLogo({ tienda }) {
   )
 }
 
-export default function PaymentsCalendar({ usuario, onClose }) {
+// `pagos` y `onPagar` viven en Dashboard: la misma agenda alimenta este
+// calendario, las notificaciones y el adeudo de los tabs.
+export default function PaymentsCalendar({ pagos, onPagar, onClose }) {
   const ref = useRef()
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
@@ -50,17 +44,16 @@ export default function PaymentsCalendar({ usuario, onClose }) {
     return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', esc) }
   }, [onClose])
 
-  const [pagos, setPagos] = useState(() => buildPaymentSchedule(usuario?.correo))
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
 
-  // Pago demo: marca el recordatorio como pagado y confirma con un toast.
+  // Pago demo: delega a Dashboard (que también notifica) y confirma con un toast.
   const [payOpenId, setPayOpenId] = useState(null)
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   const pagarPago = (id) => {
-    setPagos(prev => prev.map(p => (p.id === id ? { ...p, status: 'pagado' } : p)))
+    onPagar(id)
     setPayOpenId(null)
     setToast('Pago aplicado')
     clearTimeout(toastTimer.current)
@@ -80,10 +73,7 @@ export default function PaymentsCalendar({ usuario, onClose }) {
   }, [pagos])
 
   // Próximo a atender: el vencido más antiguo primero; si no hay, el más cercano por venir.
-  const proximo = useMemo(
-    () => pagos.find(p => p.status === 'vencido') || pagos.find(p => p.status !== 'pagado' && p.date >= today) || null,
-    [pagos, today]
-  )
+  const proximo = useMemo(() => proximoPago(pagos, today), [pagos, today])
 
   const [viewMonth, setViewMonth] = useState(() => {
     const base = proximo ? proximo.date : today

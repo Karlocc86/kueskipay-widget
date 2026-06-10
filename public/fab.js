@@ -362,18 +362,11 @@
     }
     .drawer__saldo-meta { font-size: 10.5px; font-weight: 600; opacity: .88; }
 
-    /* Nota amigable bajo la tarjeta (no afiliada), en tarjeta suave */
+    /* Nota amigable arriba de la tarjeta de saldo (no afiliada) */
     .drawer__note {
-      display: flex; align-items: flex-start; gap: 10px;
       padding: 11px 13px; border-radius: 14px;
       background: var(--kp-surface-2);
       box-shadow: inset 0 0 0 1px var(--kp-line);
-    }
-    .drawer__note-ico {
-      width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
-      display: grid; place-items: center;
-      background: color-mix(in srgb, var(--acc) 12%, transparent);
-      color: var(--acc-dark);
     }
     .drawer__note-txt {
       font-size: 11.5px; font-weight: 500; line-height: 1.35;
@@ -1080,15 +1073,14 @@
         hero.append(heroIco, heroTxt);
         body.appendChild(reveal(hero));
 
-        // Saldo KueskiCash (tarjeta verde, mismo diseño que el dashboard).
-        body.appendChild(reveal(buildSaldo('Saldo KueskiCash', 'kueski', 'cash')));
-
+        // Nota arriba del saldo: por qué KueskiCash sí aplica aquí.
         const note = el('div', 'drawer__note');
-        const noteIco = el('span', 'drawer__note-ico');
-        noteIco.appendChild(icon('wallet', 15));
-        note.append(noteIco, el('span', 'drawer__note-txt',
+        note.appendChild(el('span', 'drawer__note-txt',
           `${tienda} aún no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`));
         body.appendChild(reveal(note));
+
+        // Saldo KueskiCash (tarjeta verde, mismo diseño que el dashboard).
+        body.appendChild(reveal(buildSaldo('Saldo KueskiCash', 'kueski', 'cash')));
 
         // CTAs: usar la tarjeta o explorar tiendas afiliadas.
         let btn;

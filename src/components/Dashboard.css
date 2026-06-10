@@ -64,6 +64,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Con la cara KueskiPay activa, el área clickeable se extiende ~30% a lo ancho
+   (el wordmark es más largo); con Kueski se queda en los 82px base. */
+.brand-toggle[data-brand="kueskipay"] {
+  width: 107px;
+}
+
 .brand-toggle:focus-visible {
   outline: 2px solid var(--brand-color);
   outline-offset: 3px;
@@ -90,13 +96,19 @@
   will-change: transform, opacity;
 }
 
+/* La cara de Kueski va más grande (el wordmark trae aire vertical);
+   la de KueskiPay se baja un pelín para alinearla ópticamente. */
+.brand-toggle__img            { --ty: -50%; }
+.brand-toggle__img--kueski    { height: 18px; --ty: calc(-50% + 3px); }
+.brand-toggle__img--kueskipay { --ty: calc(-50% + 3px); }
+
 /* Default (brand = kueskipay): kueskipay flat, kueski flipped below */
-.brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(0deg);   opacity: 1; }
-.brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(-90deg);  opacity: 0; }
+.brand-toggle__img--kueskipay { transform: translateY(var(--ty)) rotateX(0deg);   opacity: 1; }
+.brand-toggle__img--kueski    { transform: translateY(var(--ty)) rotateX(-90deg);  opacity: 0; }
 
 /* Active (brand = kueski): kueski flat, kueskipay flipped above */
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translateY(-50%) rotateX(0deg);  opacity: 1; }
-.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translateY(-50%) rotateX(90deg); opacity: 0; }
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueski    { transform: translateY(var(--ty)) rotateX(0deg);  opacity: 1; }
+.brand-toggle[data-brand="kueski"] .brand-toggle__img--kueskipay { transform: translateY(var(--ty)) rotateX(90deg); opacity: 0; }
 
 .dashboard__header-icons {
   display: flex;
@@ -1039,6 +1051,13 @@
   color: #374151;
   text-align: center;
   line-height: 1.2;
+}
+
+.action-btn__img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
 }
 
 /* Payment alert */

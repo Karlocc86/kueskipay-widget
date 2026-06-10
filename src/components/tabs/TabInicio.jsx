@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { IconMoney, IconCalendar, IconStore, IconPin, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
+import { IconMoney, IconStore, IconPin, IconCopySm, IconCheckSm, IconCalSm } from '../icons'
 import { getIniciales } from '../../lib/format'
 
 // ─── Donut Chart ─────────────────────────────────────────────────────────────
@@ -335,11 +335,14 @@ export function TabInicio({ usuario, isCompatible, onVerTiendas }) {
         <>
           <div className="inicio__actions">
             {[
-              { Icon: IconMoney, label: 'Obtener dinero', onClick: undefined },
-              { Icon: IconCalendar, label: 'Abonar quincena', onClick: undefined },
-              { Icon: IconStore, label: 'Tiendas afiliadas', onClick: onVerTiendas },
-            ].map(({ Icon, label, onClick }) => (
-              <button key={label} className="action-btn" onClick={onClick}><Icon /><span>{label}</span></button>
+              { img: 'pedirPrestamo.png', label: 'Obtener dinero', onClick: undefined },
+              { img: 'abonarTienda.png', label: 'Abonar quincena', onClick: undefined },
+              { img: 'tiendasCercanas.png', label: 'Tiendas afiliadas', onClick: onVerTiendas },
+            ].map(({ img, label, onClick }) => (
+              <button key={label} className="action-btn" onClick={onClick}>
+                <img src={img} alt="" className="action-btn__img" draggable="false" />
+                <span>{label}</span>
+              </button>
             ))}
           </div>
         </>
@@ -386,11 +389,19 @@ function BalanceCard({ usuario, cash = false }) {
   )
 }
 
-export function TabInicioKueski({ usuario, tiendas = [], tiendaCompatible = true, onVerTiendas }) {
+export function TabInicioKueski({ usuario, tiendas = [], tiendaCompatible = true, onVerTiendas, onPagar }) {
   return (
     <div className="inicio inicio--kueski">
       {tiendaCompatible ? (
-        <BalanceCard usuario={usuario} />
+        <>
+          <BalanceCard usuario={usuario} />
+          <div className="kpay-actions">
+            <button className="kpay-actions__primary" onClick={onPagar}>
+              <IconMoney />
+              <span>Pagar</span>
+            </button>
+          </div>
+        </>
       ) : (
         <>
           <div className="kpay-unavail">

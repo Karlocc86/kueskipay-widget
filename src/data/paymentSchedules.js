@@ -65,3 +65,32 @@ export function buildPaymentSchedule(correo) {
   const build = SCHEDULES[(correo || '').toLowerCase()] || DEFAULT
   return build().sort((a, b) => a.date - b.date)
 }
+
+// ─── Derivados ────────────────────────────────────────────────────────────────
+// El calendario es la fuente única de pagos: notificaciones, adeudo mostrado y
+// próximo pago en la UI se calculan desde aquí.
+
+function hoy() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+// Próximo a atender: el vencido más antiguo primero; si no hay, el más cercano
+// por venir. Asume `pagos` ordenado por fecha (como regresa buildPaymentSchedule).
+export function proximoPago(pagos, today = hoy()) {
+  return pagos.find(p => p.status === 'vencido')
+    || pagos.find(p => p.status !== 'pagado' && p.date >= today)
+    || null
+}
+
+// Suma de cuotas aún no pagadas: el "en uso / adeudo" que muestran los tabs.
+export function adeudoPendiente(pagos) {
+  return pagos.filter(p => p.status !== 'pagado').reduce((s, p) => s + p.monto, 0)
+}
+
+// Último pago liquidado (alimenta la notificación de "Pago registrado").
+export function ultimoPagado(pagos) {
+  const pagados = pagos.filter(p => p.status === 'pagado')
+  return pagados.length ? pagados.reduce((a, b) => (a.date > b.date ? a : b)) : null
+}
