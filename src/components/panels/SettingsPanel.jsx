@@ -5,15 +5,21 @@ import {
   IconAlert, IconCheck, IconUser, IconCard, IconShield, IconBellSm, IconGlobe, IconHelp, IconLogout, IconPlay,
 } from '../icons'
 
-export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTutorial }) {
+export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTutorial, onTestPush, onTestEmail }) {
   const ref = useRef()
   const bodyRef = useRef()
   const [view, setView] = useState('menu')
   const [pushNotifs, setPushNotifs] = useState(true)
   const [emailNotifs, setEmailNotifs] = useState(false)
   const [faqOpen, setFaqOpen] = useState(null)
+  const [testStatus, setTestStatus] = useState('')
 
   useEffect(() => { bodyRef.current?.scrollTo(0, 0) }, [view])
+  useEffect(() => {
+    if (!testStatus) return undefined
+    const timer = window.setTimeout(() => setTestStatus(''), 2600)
+    return () => window.clearTimeout(timer)
+  }, [testStatus])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -23,6 +29,26 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
   const nombre = usuario?.nombre || 'Usuario'
   const correo = usuario?.correo || ''
   const iniciales = nombre.split(' ').filter(Boolean).slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'KP'
+
+  const handleTestPush = async () => {
+    if (!pushNotifs) {
+      setPushNotifs(true)
+    }
+
+    const status = await onTestPush?.()
+    setTestStatus(status === 'push-blocked'
+      ? 'Se agrego al panel. Permite notificaciones para ver la push.'
+      : 'Push de prueba enviada.')
+  }
+
+  const handleTestEmail = () => {
+    if (!emailNotifs) {
+      setEmailNotifs(true)
+    }
+
+    onTestEmail?.()
+    setTestStatus('Correo de prueba registrado.')
+  }
 
   const faqs = [
     { q: '¿Cómo pago mi próxima cuota?',
@@ -173,6 +199,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
             <li className="settings-item settings-item--row">
               <span className="settings-item__icon"><IconBellSm /></span>
               <span className="settings-item__label">Notificaciones push</span>
+              <button className="settings-test-btn" onClick={handleTestPush}>Probar</button>
               <button
                 className={`calc__reminder-toggle ${pushNotifs ? 'calc__reminder-toggle--on' : ''}`}
                 onClick={() => setPushNotifs(v => !v)}
@@ -184,6 +211,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
             <li className="settings-item settings-item--row">
               <span className="settings-item__icon"><IconMail /></span>
               <span className="settings-item__label">Avisos por correo</span>
+              <button className="settings-test-btn" onClick={handleTestEmail}>Probar</button>
               <button
                 className={`calc__reminder-toggle ${emailNotifs ? 'calc__reminder-toggle--on' : ''}`}
                 onClick={() => setEmailNotifs(v => !v)}
@@ -199,6 +227,7 @@ export default function SettingsDropdown({ usuario, onLogout, onClose, onStartTu
               <span className="settings-item__chev"><IconChevron /></span>
             </li>
           </ul>
+          {testStatus && <p className="settings-section__hint settings-test-status">{testStatus}</p>}
         </section>
 
         <section className="settings-section">

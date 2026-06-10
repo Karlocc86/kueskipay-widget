@@ -2402,6 +2402,33 @@
 .settings-item--row { cursor: default; }
 .settings-item--row:hover { background: transparent; }
 
+.settings-test-btn {
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--brand-color) 28%, #e5e7eb);
+  background: #ffffff;
+  color: var(--brand-color);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 6px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+}
+
+.settings-test-btn:hover {
+  background: var(--brand-color-soft);
+  border-color: var(--brand-color);
+}
+
+.settings-test-btn:active {
+  transform: scale(0.96);
+}
+
+.settings-test-status {
+  color: #4b5563;
+}
+
 /* Logout */
 .settings-logout {
   width: 100%;
