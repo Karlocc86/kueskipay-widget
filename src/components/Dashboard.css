@@ -3772,3 +3772,112 @@
   border-radius: 999px;
   white-space: nowrap;
 }
+
+/* ─── Tiendas con cashback (inicio KueskiPay) ─────────────────────────────── */
+.cashback__titulo {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 16px 0 0 0;
+}
+
+.cashback__carrusel {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 10px 4px 12px;
+  margin: 0 -4px;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.cashback__carrusel::-webkit-scrollbar {
+  height: 5px;
+}
+
+.cashback__carrusel::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+.cashback-card {
+  flex: 0 0 auto;
+  width: 112px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  scroll-snap-align: start;
+  text-align: center;
+}
+
+/* Rectángulo 1 horizontal : 0.8 vertical; se expande en hover y regresa a su
+   tamaño original al quitar el cursor o soltar el click. */
+.cashback-card__logo-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 0.8;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cashback-card__logo-link:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.18);
+}
+
+.cashback-card__logo-link:active {
+  transform: scale(1);
+}
+
+.cashback-card__logo {
+  width: 78%;
+  height: 72%;
+  object-fit: contain;
+}
+
+.cashback-card__iniciales {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+}
+
+.cashback-card__nombre {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.cashback-card__pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: #00C46A;
+}
+
+.cashback-card__online {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+}
