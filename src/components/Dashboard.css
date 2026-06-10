@@ -3570,10 +3570,6 @@
   background: var(--brand-color-soft);
 }
 
-.paycal-item--selected {
-  cursor: default;
-}
-
 /* Item ya liquidado */
 .paycal-item--pagado {
   opacity: 0.55;
@@ -3618,15 +3614,6 @@
 
 .paycal-entry--open .paycal-payrow__inner {
   padding: 10px;
-}
-
-.paycal-payrow__concept {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .paycal-payrow__actions {
@@ -3739,6 +3726,15 @@
   font-size: 13px;
   font-weight: 700;
   color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paycal-item__concept {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6b7280;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

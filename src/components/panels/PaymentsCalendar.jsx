@@ -131,10 +131,10 @@ export default function PaymentsCalendar({ usuario, onClose }) {
   const changeMonth = (delta) => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1))
 
   const diasRestantes = proximo ? Math.round((proximo.date - today) / 86400000) : 0
-  const selectedPagos = pagosByDay[selectedKey] || []
 
-  // Item de pago reutilizado por "día seleccionado" y "todos los programados".
-  const renderItem = (p, { conFecha }) => {
+  // Item de "Todos los pagos programados": fecha + logo + tienda + concepto
+  // + cuota/fecha relativa + monto + estado, con la fila de pago expandible.
+  const renderItem = (p) => {
     const meta = STATUS_META[p.status]
     const pagado = p.status === 'pagado'
     const abierto = payOpenId === p.id
@@ -145,16 +145,14 @@ export default function PaymentsCalendar({ usuario, onClose }) {
           onClick={() => togglePay(p)}
           aria-expanded={pagado ? undefined : abierto}
         >
-          {conFecha ? (
-            <span className="paycal-item__date">
-              <span className="paycal-item__date-day">{p.date.getDate()}</span>
-              <span className="paycal-item__date-mon">{MESES_CORTO[p.date.getMonth()]}</span>
-            </span>
-          ) : (
-            <PaymentStoreLogo tienda={p.tienda} />
-          )}
+          <span className="paycal-item__date">
+            <span className="paycal-item__date-day">{p.date.getDate()}</span>
+            <span className="paycal-item__date-mon">{MESES_CORTO[p.date.getMonth()]}</span>
+          </span>
+          <PaymentStoreLogo tienda={p.tienda} />
           <div className="paycal-item__body">
             <span className="paycal-item__store">{p.tienda}</span>
+            <span className="paycal-item__concept">{p.concepto}</span>
             <span className="paycal-item__cuota">
               Cuota {p.cuota}/{p.totalCuotas}{pagado ? '' : ` · ${fechaRelativa(p.date, today)}`}
             </span>
@@ -167,7 +165,6 @@ export default function PaymentsCalendar({ usuario, onClose }) {
         {!pagado && (
           <div className="paycal-payrow" aria-hidden={!abierto}>
             <div className="paycal-payrow__inner">
-              <span className="paycal-payrow__concept">{p.concepto}</span>
               <div className="paycal-payrow__actions">
                 <button className="paycal-payrow__cancel" onClick={() => setPayOpenId(null)} tabIndex={abierto ? 0 : -1}>
                   Cerrar
@@ -297,26 +294,11 @@ export default function PaymentsCalendar({ usuario, onClose }) {
           </div>
         </section>
 
-        {/* Selected day detail */}
-        {selectedPagos.length > 0 && (
-          <section className="settings-section">
-            <span className="hist-eyebrow">
-              {(() => {
-                const [, mm, dd] = selectedKey.split('-').map(Number)
-                return `${dd} de ${MESES[mm - 1]}`
-              })()}
-            </span>
-            <div className="paycal-list">
-              {selectedPagos.map((p) => renderItem(p, { conFecha: false }))}
-            </div>
-          </section>
-        )}
-
         {/* All upcoming */}
         <section className="settings-section">
           <span className="hist-eyebrow">Todos los pagos programados</span>
           <div className="paycal-list">
-            {pagos.map((p) => renderItem(p, { conFecha: true }))}
+            {pagos.map(renderItem)}
           </div>
         </section>
       </div>
