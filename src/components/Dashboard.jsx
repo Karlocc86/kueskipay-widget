@@ -214,6 +214,7 @@ function Dashboard({ usuario, onLogout }) {
 
       {showCalendar && (
         <PaymentsCalendar
+          usuario={usuario}
           onClose={() => setShowCalendar(false)}
         />
       )}
