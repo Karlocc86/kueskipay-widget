@@ -275,10 +275,6 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 15px 16px 13px;
     }
-    .drawer__header::after {
-      content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px;
-      background: var(--kp-line);
-    }
     .drawer__brand { display: flex; align-items: center; gap: 9px; }
     .drawer__brand-img { height: 30px; width: auto; object-fit: contain; }
     .drawer__close {
@@ -943,7 +939,7 @@
       const hdr = el('div', 'drawer__header');
       const brand = el('div', 'drawer__brand');
       const bi = el('img', 'drawer__brand-img');
-      bi.src = assetUrl('kueskipay.png');
+      bi.src = assetUrl('kueskiPayconmacetita.png');
       bi.alt = 'KueskiPay';
       brand.appendChild(bi);
       const closeBtn = el('button', 'drawer__close');
