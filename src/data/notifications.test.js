@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildNotifications } from './notifications'
+import { buildNotifications, buildTestNotification } from './notifications'
 
 describe('buildNotifications', () => {
   it('devuelve una nueva instancia cada vez (no comparte estado mutable)', () => {
@@ -22,5 +22,24 @@ describe('buildNotifications', () => {
   it('incluye notificaciones no leídas para el badge', () => {
     const noLeidas = buildNotifications().filter((n) => !n.leido)
     expect(noLeidas.length).toBeGreaterThan(0)
+  })
+})
+
+describe('buildTestNotification', () => {
+  it('crea una notificacion push no leida para el grupo de hoy', () => {
+    const notif = buildTestNotification('push')
+
+    expect(notif.id).toContain('test-push-')
+    expect(notif.grupo).toBe('Hoy')
+    expect(notif.leido).toBe(false)
+    expect(notif.tiempo).toBe('Ahora')
+  })
+
+  it('crea una notificacion de correo con copia de email', () => {
+    const notif = buildTestNotification('email')
+
+    expect(notif.id).toContain('test-email-')
+    expect(notif.titulo).toContain('Correo')
+    expect(notif.texto).toContain('correo registrado')
   })
 })

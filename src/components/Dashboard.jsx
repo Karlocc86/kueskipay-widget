@@ -5,7 +5,7 @@ import Tutorial from './Tutorial'
 
 import { IconBell, IconCalendarHeader, IconSettings, IconHome, IconCalc, IconSearch, IconChart, IconTicket } from './icons'
 import { COUPONS } from '../data/coupons'
-import { buildNotifications } from '../data/notifications'
+import { buildNotifications, buildTestNotification } from '../data/notifications'
 import NotificationsPanel from './panels/NotificationsPanel'
 import CouponsPanel from './panels/CouponsPanel'
 import PaymentsCalendar from './panels/PaymentsCalendar'
@@ -41,6 +41,38 @@ const NAV_TABS = [
   { id: 'historial',   Icon: IconChart,  label: 'HISTORIAL' },
 ]
 
+async function showBrowserNotification(notification) {
+  const title = notification?.titulo || 'KueskiPay'
+  const message = notification?.texto || 'Tienes una nueva notificacion.'
+
+  if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'KP_SHOW_NOTIFICATION',
+        payload: { title, message },
+      })
+      return { ok: true, native: true }
+    } catch {
+      // Fall back to the Web Notifications API in local dev or restricted contexts.
+    }
+  }
+
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return { ok: false, reason: 'unsupported' }
+  }
+
+  let permission = Notification.permission
+  if (permission === 'default') {
+    permission = await Notification.requestPermission()
+  }
+  if (permission !== 'granted') {
+    return { ok: false, reason: 'denied' }
+  }
+
+  new Notification(title, { body: message, icon: '/icon128.png' })
+  return { ok: true, native: true }
+}
+
 function Dashboard({ usuario, onLogout }) {
   const [tab, setTab] = useState('inicio')
   const [brand, setBrand] = useState('kueski')
@@ -57,6 +89,23 @@ function Dashboard({ usuario, onLogout }) {
   // se conserva la detección para re-conectarla a la UI más adelante.
   const [, setTiendaCompatible] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+
+  const addTestNotification = useCallback((channel) => {
+    const notification = buildTestNotification(channel)
+    setNotifs((prev) => [notification, ...prev])
+    return notification
+  }, [])
+
+  const handleTestPush = useCallback(async () => {
+    const notification = addTestNotification('push')
+    const result = await showBrowserNotification(notification)
+    return result.ok ? 'push-sent' : 'push-blocked'
+  }, [addTestNotification])
+
+  const handleTestEmail = useCallback(() => {
+    addTestNotification('email')
+    return 'email-sent'
+  }, [addTestNotification])
 
   // El tour se lanza solo la primera vez; después vive en Ajustes → Ver tutorial.
   useEffect(() => {
@@ -209,6 +258,8 @@ function Dashboard({ usuario, onLogout }) {
           onLogout={onLogout}
           onClose={() => setShowSettings(false)}
           onStartTutorial={() => { setShowSettings(false); setShowTutorial(true) }}
+          onTestPush={handleTestPush}
+          onTestEmail={handleTestEmail}
         />
       )}
 

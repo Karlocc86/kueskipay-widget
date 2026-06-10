@@ -8,3 +8,18 @@ export function buildNotifications() {
     { id: 'n5', tipo: 'tienda', grupo: 'Esta semana', titulo: 'Nueva tienda afiliada', texto: 'Ya puedes pagar en Liverpool a quincenas con KueskiPay.', tiempo: 'Hace 5 días', leido: true  },
   ]
 }
+
+export function buildTestNotification(channel = 'push') {
+  const isEmail = channel === 'email'
+  return {
+    id: `test-${channel}-${Date.now()}`,
+    tipo: isEmail ? 'ok' : 'pago',
+    grupo: 'Hoy',
+    titulo: isEmail ? 'Correo de prueba enviado' : 'Notificacion push de prueba',
+    texto: isEmail
+      ? 'Te enviamos un aviso de prueba a tu correo registrado.'
+      : 'Tus recordatorios push estan activos para pagos, cupones y cambios de linea.',
+    tiempo: 'Ahora',
+    leido: false,
+  }
+}
