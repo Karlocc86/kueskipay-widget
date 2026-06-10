@@ -19,9 +19,14 @@
     try { return chrome.runtime.getURL(path); } catch { return ''; }
   }
 
+  // Verde = identidad KueskiCash (tienda no afiliada).
   const PRIMARY      = '#0d8a7a';
   const PRIMARY_DARK = '#085041';
   const PRIMARY_LITE = '#16b89f';
+  // Azul = identidad KueskiPay (tienda afiliada), mismo brand-color del dashboard.
+  const BLUE         = '#1A73E8';
+  const BLUE_DARK    = '#0F4FA8';
+  const BLUE_LITE    = '#4D96F0';
   const DANGER       = '#e02f2f';
   const DANGER_DARK  = '#8f1d1d';
   const DANGER_LITE  = '#ff5f57';
@@ -74,7 +79,7 @@
       height: ${FAB_SIZE}px;
       border-radius: 50%;
       background:
-        radial-gradient(120% 120% at 30% 22%, ${PRIMARY_LITE} 0%, ${PRIMARY} 46%, ${PRIMARY_DARK} 100%);
+        radial-gradient(120% 120% at 30% 22%, ${BLUE_LITE} 0%, ${BLUE} 46%, ${BLUE_DARK} 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -86,8 +91,8 @@
       border: none;
       outline: none;
       box-shadow:
-        0 6px 18px rgba(8,80,65,0.36),
-        0 2px 6px rgba(8,80,65,0.28),
+        0 6px 18px rgba(15,79,168,0.36),
+        0 2px 6px rgba(15,79,168,0.28),
         inset 0 1px 0 rgba(255,255,255,0.28);
       transition: opacity .2s ease, box-shadow .25s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
       animation: kpFabIn .56s cubic-bezier(.34,1.56,.64,1) backwards;
@@ -97,7 +102,7 @@
       position: absolute;
       inset: -5px;
       border-radius: 50%;
-      border: 2px solid ${PRIMARY};
+      border: 2px solid ${BLUE};
       opacity: 0;
       pointer-events: none;
     }
@@ -106,8 +111,8 @@
       opacity: 1;
       transform: translateY(-2px) scale(1.05);
       box-shadow:
-        0 12px 28px rgba(8,80,65,0.46),
-        0 4px 10px rgba(8,80,65,0.32),
+        0 12px 28px rgba(15,79,168,0.46),
+        0 4px 10px rgba(15,79,168,0.32),
         inset 0 1px 0 rgba(255,255,255,0.32);
     }
     .fab:active { transform: scale(0.92); }
@@ -128,7 +133,7 @@
       top: -2px; right: -2px;
       width: 19px; height: 19px;
       border-radius: 50%;
-      background: #fff; color: ${PRIMARY_DARK};
+      background: #fff; color: ${BLUE_DARK};
       display: grid; place-items: center;
       transform: scale(0);
       transition: transform .3s cubic-bezier(.34,1.56,.64,1);
@@ -158,7 +163,7 @@
     }
 
     /* Foco de teclado visible (no en click de mouse) */
-    .fab:focus-visible { outline: 3px solid rgba(13,138,122,.55); outline-offset: 3px; }
+    .fab:focus-visible { outline: 3px solid rgba(26,115,232,.55); outline-offset: 3px; }
 
     /* ── Pestaña: replegado contra el borde anclado ── */
     .fab--peek.fab--dock-right { transform: translateX(20px); opacity: .55; }
@@ -194,12 +199,16 @@
     .fab--dock-left  .fab__bubble::after { left: -4px; }
     .fab__bubble--show { opacity: 1; transform: translateY(-50%) translateX(0); }
     .fab__bubble--nudge {
-      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY}); color: #fff;
-      box-shadow: 0 8px 22px -4px rgba(13,138,122,.5);
+      background: linear-gradient(135deg, ${BLUE_LITE}, ${BLUE}); color: #fff;
+      box-shadow: 0 8px 22px -4px rgba(26,115,232,.5);
     }
 
-    /* ── Panel (claro minimalista) ── */
+    /* ── Panel (claro minimalista) ──
+       Acento por estado: azul KueskiPay (afiliada) / verde KueskiCash (no afiliada). */
     .drawer {
+      --acc: ${BLUE};
+      --acc-dark: ${BLUE_DARK};
+      --acc-lite: ${BLUE_LITE};
       position: fixed;
       width: ${DRAWER_W}px;
       max-width: calc(100vw - ${MARGIN * 2}px);
@@ -231,6 +240,11 @@
       opacity: 1; transform: scale(1) translateY(0); pointer-events: all;
       visibility: visible;
       transition: opacity .22s ease, transform .4s cubic-bezier(.2,1,.3,1), visibility 0s;
+    }
+    .drawer--no {
+      --acc: ${PRIMARY};
+      --acc-dark: ${PRIMARY_DARK};
+      --acc-lite: ${PRIMARY_LITE};
     }
 
     /* Conector (beak) que ancla el panel al FAB */
@@ -291,7 +305,7 @@
       overflow-y: auto;
     }
     .drawer__body::-webkit-scrollbar { width: 6px; }
-    .drawer__body::-webkit-scrollbar-thumb { background: rgba(13,138,122,.22); border-radius: 6px; }
+    .drawer__body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--acc) 25%, transparent); border-radius: 6px; }
 
     /* ── HERO de compatibilidad: responde "¿puedo pagar aquí?" ── */
     .drawer__hero {
@@ -311,15 +325,15 @@
     .drawer__hero-sub { font-size: 11.5px; font-weight: 500; line-height: 1.25; }
 
     .drawer__hero--ok {
-      background: linear-gradient(135deg, rgba(22,184,159,0.12), rgba(13,138,122,0.05));
-      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.14);
+      background: linear-gradient(135deg, rgba(77,150,240,0.12), rgba(26,115,232,0.05));
+      box-shadow: inset 0 0 0 1px rgba(26,115,232,0.14);
     }
     .drawer__hero--ok .drawer__hero-ico {
-      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY});
-      color: #fff; box-shadow: 0 6px 14px -4px rgba(13,138,122,0.5);
+      background: linear-gradient(135deg, ${BLUE_LITE}, ${BLUE});
+      color: #fff; box-shadow: 0 6px 14px -4px rgba(26,115,232,0.5);
     }
-    .drawer__hero--ok .drawer__hero-title { color: ${PRIMARY_DARK}; }
-    .drawer__hero--ok .drawer__hero-sub { color: ${PRIMARY}; }
+    .drawer__hero--ok .drawer__hero-title { color: ${BLUE_DARK}; }
+    .drawer__hero--ok .drawer__hero-sub { color: ${BLUE}; }
 
     .drawer__hero--no {
       background: linear-gradient(135deg, rgba(224,47,47,0.10), rgba(143,29,29,0.04));
@@ -332,54 +346,42 @@
     .drawer__hero--no .drawer__hero-title { color: ${DANGER_DARK}; }
     .drawer__hero--no .drawer__hero-sub { color: ${DANGER}; }
 
-    /* ── KueskiCash (tienda no afiliada) ── */
-    .drawer__cash {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 13px 14px; border-radius: 16px;
-      background: linear-gradient(135deg, rgba(22,184,159,0.10), rgba(13,138,122,0.04));
-      box-shadow: inset 0 0 0 1px rgba(13,138,122,0.14);
+    /* ── Tarjeta de saldo (mismo diseño que .kpay-balance del dashboard) ──
+       Azul "Saldo para compras" en afiliadas; verde "Saldo KueskiCash" si no. */
+    .drawer__saldo {
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 14px 15px 13px; border-radius: 16px; color: #fff;
+      background: linear-gradient(135deg, var(--acc) 0%, var(--acc-dark) 100%);
+      box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--acc) 55%, transparent);
     }
-    .drawer__cash-ico {
-      width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
-      display: grid; place-items: center;
-      background: linear-gradient(135deg, ${PRIMARY_LITE}, ${PRIMARY});
-      color: #fff; box-shadow: 0 6px 14px -4px rgba(13,138,122,0.5);
+    .drawer__saldo-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .drawer__saldo-lbl {
+      font-size: 9.5px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase;
+      opacity: .94;
     }
-    .drawer__cash-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .drawer__cash-title {
-      font-size: 13px; font-weight: 800; letter-spacing: -.1px; color: ${PRIMARY_DARK};
+    .drawer__saldo-mark { font-size: 12.5px; font-weight: 300; letter-spacing: -.2px; opacity: .95; }
+    .drawer__saldo-mark strong { font-weight: 800; }
+    .drawer__saldo-figure { display: flex; align-items: baseline; gap: 6px; }
+    .drawer__saldo-val {
+      font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -.8px;
+      font-variant-numeric: tabular-nums;
     }
-    .drawer__cash-sub { font-size: 11.5px; font-weight: 500; line-height: 1.3; color: var(--kp-ink-soft); }
-    .drawer__cash-figure { display: flex; align-items: baseline; gap: 5px; margin-top: 3px; }
-    .drawer__cash-val {
-      font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: -.6px;
-      color: var(--kp-ink); font-variant-numeric: tabular-nums;
+    .drawer__saldo-cur { font-size: 11px; font-weight: 700; opacity: .85; }
+    .drawer__saldo-bar {
+      height: 5px; border-radius: 999px; background: rgba(255,255,255,0.28); overflow: hidden;
     }
-    .drawer__cash-cur { font-size: 10.5px; font-weight: 700; color: var(--kp-ink-soft); }
+    .drawer__saldo-bar-fill {
+      height: 100%; border-radius: 999px; background: #fff; width: 0;
+      transition: width .8s cubic-bezier(.22,1,.36,1);
+    }
+    .drawer__saldo-meta { font-size: 10.5px; font-weight: 600; opacity: .88; }
 
-    /* ── Crédito disponible (claro) ── */
-    .drawer__credit {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 4px 2px;
+    /* Nota amigable bajo la tarjeta (no afiliada) */
+    .drawer__note {
+      font-size: 11.5px; font-weight: 500; line-height: 1.35;
+      color: var(--kp-ink-soft); padding: 0 2px;
     }
-    .drawer__credit-ico {
-      width: 38px; height: 38px; border-radius: 11px; flex: 0 0 auto;
-      display: grid; place-items: center;
-      background: var(--kp-surface-2); color: ${PRIMARY};
-      box-shadow: inset 0 0 0 1px var(--kp-line);
-    }
-    .drawer__credit-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .drawer__credit-lbl {
-      font-size: 9.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
-      color: var(--kp-ink-mute);
-    }
-    .drawer__credit-figure { display: flex; align-items: baseline; gap: 6px; }
-    .drawer__credit-val {
-      font-size: 27px; font-weight: 800; line-height: 1; letter-spacing: -1px;
-      color: var(--kp-ink); font-variant-numeric: tabular-nums;
-    }
-    .drawer__credit-cur { font-size: 11px; font-weight: 700; color: var(--kp-ink-soft); }
-    .drawer__credit-name { font-size: 11.5px; font-weight: 600; color: var(--kp-ink-soft); margin-top: 1px; }
 
     .drawer__divider { height: 1px; background: var(--kp-line); margin: 1px 0; }
 
@@ -387,7 +389,7 @@
     .drawer__product { padding: 2px; }
     .drawer__product-tag {
       font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
-      color: ${PRIMARY}; display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
+      color: var(--acc); display: flex; align-items: center; gap: 5px; margin-bottom: 7px;
     }
     .drawer__product-name {
       font-size: 13px; font-weight: 700; color: var(--kp-ink); letter-spacing: -.1px;
@@ -399,8 +401,8 @@
       font-variant-numeric: tabular-nums;
     }
     .drawer__product-quin {
-      font-size: 11px; font-weight: 800; color: ${PRIMARY_DARK}; white-space: nowrap;
-      background: rgba(13,138,122,.1); padding: 5px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 800; color: var(--acc-dark); white-space: nowrap;
+      background: color-mix(in srgb, var(--acc) 10%, transparent); padding: 5px 10px; border-radius: 999px;
       display: inline-flex; align-items: center; gap: 5px;
     }
 
@@ -416,19 +418,19 @@
     }
     .drawer__btn--primary {
       color: #fff;
-      background: linear-gradient(135deg, ${PRIMARY_LITE} 0%, ${PRIMARY} 62%, ${PRIMARY_DARK} 100%);
-      box-shadow: 0 8px 18px -5px rgba(13,138,122,0.5), inset 0 1px 0 rgba(255,255,255,0.22);
+      background: linear-gradient(135deg, var(--acc-lite) 0%, var(--acc) 62%, var(--acc-dark) 100%);
+      box-shadow: 0 8px 18px -5px color-mix(in srgb, var(--acc) 50%, transparent), inset 0 1px 0 rgba(255,255,255,0.22);
     }
     .drawer__btn--primary::after {
       content: ''; position: absolute; inset: 0;
       background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.28) 50%, transparent 65%);
       transform: translateX(-120%); transition: transform .55s ease;
     }
-    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -7px rgba(13,138,122,0.58), inset 0 1px 0 rgba(255,255,255,0.22); }
+    .drawer__btn--primary:hover { transform: translateY(-2px); box-shadow: 0 13px 26px -7px color-mix(in srgb, var(--acc) 58%, transparent), inset 0 1px 0 rgba(255,255,255,0.22); }
     .drawer__btn--primary:hover::after { transform: translateX(120%); }
     .drawer__btn--primary:active { transform: translateY(0) scale(.985); }
     .drawer__btn--ghost {
-      background: var(--kp-surface-2); color: ${PRIMARY_DARK};
+      background: var(--kp-surface-2); color: var(--acc-dark);
       box-shadow: inset 0 0 0 1px var(--kp-line);
     }
     .drawer__btn--ghost:hover { background: #eef5f3; transform: translateY(-1px); }
@@ -442,7 +444,7 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
       transition: color .15s, background .15s;
     }
-    .drawer__footer-btn:hover { color: ${PRIMARY}; background: var(--kp-surface-2); }
+    .drawer__footer-btn:hover { color: var(--acc); background: var(--kp-surface-2); }
     .drawer__footer-btn svg { transition: transform .2s ease; }
     .drawer__footer-btn:hover svg { transform: translateX(3px); }
 
@@ -920,7 +922,46 @@
       const compat    = isCompat();
       const tienda    = window.location.hostname.replace(/^www\./, '');
       const disp      = user?.credito_disponible ?? 0;
-      const nombre    = user?.nombre ?? '';
+      const adeudo    = user?.adeudo_proximo ?? 0;
+      const linea     = disp + adeudo;
+      const pctUso    = linea > 0 ? Math.min(100, Math.round((adeudo / linea) * 100)) : 0;
+
+      // Acento del panel según el estado (azul KueskiPay / verde KueskiCash).
+      drawer.classList.toggle('drawer--no', !compat);
+
+      // Tarjeta de saldo, mismo diseño que el dashboard de KueskiPay.
+      const buildSaldo = (lbl, markStrong, markLight) => {
+        const card = el('div', 'drawer__saldo');
+        const top = el('div', 'drawer__saldo-top');
+        const mark = el('span', 'drawer__saldo-mark');
+        mark.append(Object.assign(el('strong'), { textContent: markStrong }), document.createTextNode(markLight));
+        top.append(el('span', 'drawer__saldo-lbl', lbl), mark);
+        card.appendChild(top);
+
+        const figure = el('div', 'drawer__saldo-figure');
+        if (user) {
+          figure.append(
+            el('span', 'drawer__saldo-val', `$${disp.toLocaleString('es-MX')}`),
+            el('span', 'drawer__saldo-cur', 'MXN')
+          );
+          card.appendChild(figure);
+
+          const bar = el('div', 'drawer__saldo-bar');
+          const fill = el('div', 'drawer__saldo-bar-fill');
+          bar.appendChild(fill);
+          card.appendChild(bar);
+          // La barra anima desde 0 una vez insertada en el DOM.
+          requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = `${pctUso}%`; }));
+
+          card.appendChild(el('span', 'drawer__saldo-meta',
+            `$${adeudo.toLocaleString('es-MX')} en uso · línea de $${linea.toLocaleString('es-MX')}`));
+        } else {
+          figure.appendChild(el('span', 'drawer__saldo-val', 'Inicia sesión'));
+          card.appendChild(figure);
+          card.appendChild(el('span', 'drawer__saldo-meta', 'Entra para ver tu saldo disponible'));
+        }
+        return card;
+      };
 
       // El producto solo es válido si pertenece a ESTA tienda y es reciente.
       const FRESCO_MS = 60 * 60 * 1000;
@@ -965,27 +1006,8 @@
         hero.append(heroIco, heroTxt);
         body.appendChild(reveal(hero));
 
-        body.appendChild(reveal(el('div', 'drawer__divider')));
-
-        // Crédito disponible
-        const credit = el('div', 'drawer__credit');
-        const creditIco = el('div', 'drawer__credit-ico');
-        creditIco.appendChild(icon('wallet', 20));
-        const creditMain = el('div', 'drawer__credit-main');
-        creditMain.appendChild(el('span', 'drawer__credit-lbl', 'Crédito disponible'));
-        const figure = el('div', 'drawer__credit-figure');
-        if (user) {
-          figure.append(
-            el('span', 'drawer__credit-val', `$${disp.toLocaleString('es-MX')}`),
-            el('span', 'drawer__credit-cur', 'MXN')
-          );
-        } else {
-          figure.appendChild(el('span', 'drawer__credit-val', 'Inicia sesión'));
-        }
-        creditMain.appendChild(figure);
-        if (nombre) creditMain.appendChild(el('span', 'drawer__credit-name', `Hola, ${nombre.split(' ')[0]}`));
-        credit.append(creditIco, creditMain);
-        body.appendChild(reveal(credit));
+        // Saldo para compras (tarjeta azul, igual que el dashboard).
+        body.appendChild(reveal(buildSaldo('Saldo para compras', 'kueski', 'pay')));
 
         // Producto detectado
         if (producto) {
@@ -1033,27 +1055,11 @@
         hero.append(heroIco, heroTxt);
         body.appendChild(reveal(hero));
 
-        // Pitch KueskiCash con el saldo del usuario.
-        const cash = el('div', 'drawer__cash');
-        const cashIco = el('div', 'drawer__cash-ico');
-        cashIco.appendChild(icon('wallet', 20));
-        const cashMain = el('div', 'drawer__cash-main');
-        cashMain.append(
-          el('span', 'drawer__cash-title', 'Paga con tu tarjeta KueskiCash'),
-          el('span', 'drawer__cash-sub', `${tienda} no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`)
-        );
-        const cashFigure = el('div', 'drawer__cash-figure');
-        if (user) {
-          cashFigure.append(
-            el('span', 'drawer__cash-val', `$${disp.toLocaleString('es-MX')}`),
-            el('span', 'drawer__cash-cur', 'MXN disponibles')
-          );
-        } else {
-          cashFigure.appendChild(el('span', 'drawer__cash-val', 'Inicia sesión'));
-        }
-        cashMain.appendChild(cashFigure);
-        cash.append(cashIco, cashMain);
-        body.appendChild(reveal(cash));
+        // Saldo KueskiCash (tarjeta verde, mismo diseño que el dashboard).
+        body.appendChild(reveal(buildSaldo('Saldo KueskiCash', 'kueski', 'cash')));
+
+        body.appendChild(reveal(el('p', 'drawer__note',
+          `${tienda} aún no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`)));
 
         // CTAs: usar la tarjeta o explorar tiendas afiliadas.
         let btn;
