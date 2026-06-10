@@ -143,24 +143,9 @@
     .fab__badge--on { transform: scale(1); }
 
     /* ── Estado: compatible vs no compatible ── */
-    /* Tienda no afiliada: el FAB pasa a rojo y pierde el halo/pulso. */
-    .fab--off {
-      background:
-        radial-gradient(120% 120% at 30% 22%, ${DANGER_LITE} 0%, ${DANGER} 46%, ${DANGER_DARK} 100%);
-      opacity: .88;
-      box-shadow:
-        0 6px 18px rgba(143,29,29,0.36),
-        0 2px 6px rgba(143,29,29,0.28),
-        inset 0 1px 0 rgba(255,255,255,0.28);
-    }
+    /* Tienda no afiliada: mismos colores azules, sin halo; el badge muestra una X. */
     .fab--off::after { animation: none !important; }   /* sin halo */
-    .fab--off:hover {
-      opacity: 1;
-      box-shadow:
-        0 12px 28px rgba(143,29,29,0.46),
-        0 4px 10px rgba(143,29,29,0.32),
-        inset 0 1px 0 rgba(255,255,255,0.32);
-    }
+    .fab__badge--no { color: ${DANGER}; }
 
     /* Foco de teclado visible (no en click de mouse) */
     .fab:focus-visible { outline: 3px solid rgba(26,115,232,.55); outline-offset: 3px; }
@@ -377,10 +362,22 @@
     }
     .drawer__saldo-meta { font-size: 10.5px; font-weight: 600; opacity: .88; }
 
-    /* Nota amigable bajo la tarjeta (no afiliada) */
+    /* Nota amigable bajo la tarjeta (no afiliada), en tarjeta suave */
     .drawer__note {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 13px; border-radius: 14px;
+      background: var(--kp-surface-2);
+      box-shadow: inset 0 0 0 1px var(--kp-line);
+    }
+    .drawer__note-ico {
+      width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
+      display: grid; place-items: center;
+      background: color-mix(in srgb, var(--acc) 12%, transparent);
+      color: var(--acc-dark);
+    }
+    .drawer__note-txt {
       font-size: 11.5px; font-weight: 500; line-height: 1.35;
-      color: var(--kp-ink-soft); padding: 0 2px;
+      color: var(--kp-ink-soft);
     }
 
     .drawer__divider { height: 1px; background: var(--kp-line); margin: 1px 0; }
@@ -486,13 +483,17 @@
   if (logoUrl) fabImg.src = logoUrl;
   fab.appendChild(fabImg);
 
-  // Badge con check (SVG inline; no usa icon() para evitar TDZ de ICONS en este punto).
+  // Badge de estado: check (afiliada) o X (no afiliada).
+  // SVG inline; no usa icon() para evitar TDZ de ICONS en este punto.
+  const BADGE_SVG = (path) =>
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" ' +
+    `stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+  const BADGE_CHECK = BADGE_SVG('<path d="M20 6 9 17l-5-5"/>');
+  const BADGE_X     = BADGE_SVG('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>');
   const fabBadge = document.createElement('span');
   fabBadge.className = 'fab__badge';
   fabBadge.setAttribute('aria-hidden', 'true');
-  fabBadge.innerHTML =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  fabBadge.innerHTML = BADGE_CHECK;
   fab.appendChild(fabBadge);
 
   // Globo lateral: etiqueta al hover + nudge de producto (decorativo).
@@ -844,7 +845,10 @@
     chrome.storage.local.get(['productoDetectado'], (res) => {
       const d = res.productoDetectado;
       const tienda = window.location.hostname.replace(/^www\./, '');
-      const fresh = d && d.url === tienda && (Date.now() - (d.ts || 0) < FRESCO_MS) ? d : null;
+      // Solo cuenta si estamos parados en la página EXACTA del producto
+      // (no en el home/exploración del mismo dominio).
+      const fresh = d && d.url === tienda && d.href === window.location.href &&
+        (Date.now() - (d.ts || 0) < FRESCO_MS) ? d : null;
       if (fresh && isCompat()) {
         const raw = parseFloat(String(fresh.precio).replace(/,/g, '')) || 0;
         currentNudge = raw > 0
@@ -867,7 +871,10 @@
     const compat = isCompat();
     fab.classList.toggle('fab--ready', compat);
     fab.classList.toggle('fab--off', !compat);
-    fabBadge.classList.toggle('fab__badge--on', compat);
+    // Badge siempre visible: check azul (afiliada) o X roja (no afiliada).
+    fabBadge.innerHTML = compat ? BADGE_CHECK : BADGE_X;
+    fabBadge.classList.toggle('fab__badge--no', !compat);
+    fabBadge.classList.add('fab__badge--on');
     if (!compat) fab.classList.remove('fab--pulse');
     else if (!isOpen) fab.classList.add('fab--pulse');
     fab.setAttribute('aria-label',
@@ -912,6 +919,22 @@
       }
     });
   } catch {}
+
+  // Navegación SPA: al cambiar la URL el producto guardado deja de pertenecer a
+  // esta página, así que se recalcula el nudge (y el drawer si está abierto).
+  // Mismo patrón que content_script.js; ambos parches conviven encadenados.
+  let urlActual = window.location.href;
+  const onUrlChange = () => {
+    if (window.location.href === urlActual) return;
+    urlActual = window.location.href;
+    updateNudge(false);
+    if (isOpen) renderDrawer();
+  };
+  const _push = history.pushState;
+  history.pushState = function (...args) { _push.apply(this, args); onUrlChange(); };
+  const _replace = history.replaceState;
+  history.replaceState = function (...args) { _replace.apply(this, args); onUrlChange(); };
+  window.addEventListener('popstate', onUrlChange);
 
   // ─── Render del contenido ─────────────────────────────────────────────────────
   function renderDrawer(done) {
@@ -963,9 +986,11 @@
         return card;
       };
 
-      // El producto solo es válido si pertenece a ESTA tienda y es reciente.
+      // El producto solo es válido si estamos en SU página exacta y es reciente
+      // (en el home o explorando el mismo dominio no se muestra).
       const FRESCO_MS = 60 * 60 * 1000;
       const producto = detectado && detectado.url === tienda &&
+        detectado.href === window.location.href &&
         (Date.now() - (detectado.ts || 0) < FRESCO_MS) ? detectado : null;
 
       clip.innerHTML = '';
@@ -1058,8 +1083,12 @@
         // Saldo KueskiCash (tarjeta verde, mismo diseño que el dashboard).
         body.appendChild(reveal(buildSaldo('Saldo KueskiCash', 'kueski', 'cash')));
 
-        body.appendChild(reveal(el('p', 'drawer__note',
-          `${tienda} aún no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`)));
+        const note = el('div', 'drawer__note');
+        const noteIco = el('span', 'drawer__note-ico');
+        noteIco.appendChild(icon('wallet', 15));
+        note.append(noteIco, el('span', 'drawer__note-txt',
+          `${tienda} aún no acepta KueskiPay, pero tu tarjeta KueskiCash funciona en cualquier tienda.`));
+        body.appendChild(reveal(note));
 
         // CTAs: usar la tarjeta o explorar tiendas afiliadas.
         let btn;
